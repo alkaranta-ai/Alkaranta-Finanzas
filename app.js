@@ -1,141 +1,254 @@
 const categorias = {
-    Ingreso: [
-        "Sueldo",
-        "Horas Extras",
-        "Comisiones",
-        "Ventas",
-        "Honorarios",
-        "Inversiones",
-        "Otros"
-    ],
-    Egreso: [
-        "Supermercado",
-        "Combustible",
-        "Servicios",
-        "Internet",
-        "Telefonía",
-        "Salud",
-        "Educación",
-        "Impuestos",
-        "Tarjetas",
-        "Entretenimiento",
-        "Otros"
-    ]
+  Ingreso: ["Sueldo","Horas Extras","Comisiones","Ventas","Honorarios","Inversiones","Otros"],
+  Egreso:  ["Supermercado","Combustible","Servicios","Internet","Telefonía","Salud","Educación","Impuestos","Tarjetas","Entretenimiento","Otros"]
 };
 
 let movimientos = JSON.parse(localStorage.getItem("movimientos")) || [];
+let editandoIndice = null;
+let graficoTorta  = null;
+let graficoBarras = null;
+
+document.addEventListener("DOMContentLoaded", () => {
+  const hoy = new Date().toISOString().split("T")[0];
+  document.getElementById("fecha").value = hoy;
+  actualizarCategorias();
+  poblarFiltroMeses();
+  renderizar();
+});
 
 function actualizarCategorias() {
-
-    const tipo = document.getElementById("tipo").value;
-    const categoria = document.getElementById("categoria");
-
-    categoria.innerHTML = "";
-
-    categorias[tipo].forEach(item => {
-
-        let option = document.createElement("option");
-
-        option.value = item;
-        option.textContent = item;
-
-        categoria.appendChild(option);
-
-    });
-
+  const tipo = document.getElementById("tipo").value;
+  const sel  = document.getElementById("categoria");
+  sel.innerHTML = "";
+  categorias[tipo].forEach(item => {
+    const opt = document.createElement("option");
+    opt.value = opt.textContent = item;
+    sel.appendChild(opt);
+  });
 }
 
 function guardarMovimiento() {
+  const fecha       = document.getElementById("fecha").value;
+  const tipo        = document.getElementById("tipo").value;
+  const categoria   = document.getElementById("categoria").value;
+  const monto       = Number(document.getElementById("monto").value);
+  const descripcion = document.getElementById("descripcion").value.trim();
 
-    const fechaInput = document.getElementById("fecha").value;
-    const tipo = document.getElementById("tipo").value;
-    const categoria = document.getElementById("categoria").value;
-    const monto = Number(document.getElementById("monto").value);
-    const descripcion = document.getElementById("descripcion").value;
+  if (!monto || monto <= 0) { alert("Ingresá un monto válido."); return; }
+  if (!fecha)               { alert("Seleccioná una fecha."); return; }
 
-    if (!monto || monto <= 0) {
-        alert("Ingrese un monto válido");
-        return;
-    }
+  const mov = { fecha, tipo, categoria, monto, descripcion };
 
-    const movimiento = {
-        fecha: fechaInput || new Date().toLocaleDateString("es-AR"),
-        tipo,
-        categoria,
-        monto,
-        descripcion
-    };
+  if (editandoIndice !== null) {
+    movimientos[editandoIndice] = mov;
+    editandoIndice = null;
+    document.getElementById("tituloFormulario").textContent = "Nuevo Movimiento";
+    document.getElementById("btnGuardar").textContent = "💾 Guardar Movimiento";
+    document.getElementById("btnCancelar").style.display = "none";
+  } else {
+    movimientos.push(mov);
+  }
 
-    movimientos.push(movimiento);
-
-    localStorage.setItem(
-        "movimientos",
-        JSON.stringify(movimientos)
-    );
-
-    document.getElementById("monto").value = "";
-    document.getElementById("descripcion").value = "";
-
-    renderizar();
+  guardarLS();
+  limpiarFormulario();
+  poblarFiltroMeses();
+  renderizar();
 }
 
-function eliminarMovimiento(indice){
+function limpiarFormulario() {
+  document.getElementById("monto").value = "";
+  document.getElementById("descripcion").value = "";
+}
 
-    if(!confirm("¿Eliminar movimiento?")){
-        return;
-    }
+function cancelarEdicion() {
+  editandoIndice = null;
+  document.getElementById("tituloFormulario").textContent = "Nuevo Movimiento";
+  document.getElementById("btnGuardar").textContent = "💾 Guardar Movimiento";
+  document.getElementById("btnCancelar").style.display = "none";
+  limpiarFormulario();
+}
 
-    movimientos.splice(indice,1);
+function editarMovimiento(indice) {
+  const mov = movimientos[indice];
+  editandoIndice = indice;
+  document.getElementById("fecha").value       = mov.fecha;
+  document.getElementById("tipo").value        = mov.tipo;
+  actualizarCategorias();
+  document.getElementById("categoria").value   = mov.categoria;
+  document.getElementById("monto").value       = mov.monto;
+  document.getElementById("descripcion").value = mov.descripcion;
+  document.getElementById("tituloFormulario").textContent = "Editar Movimiento";
+  document.getElementById("btnGuardar").textContent = "✏️ Actualizar";
+  document.getElementById("btnCancelar").style.display = "inline-block";
+  document.querySelector(".formulario").scrollIntoView({ behavior: "smooth" });
+}
 
-    localStorage.setItem(
-        "movimientos",
-        JSON.stringify(movimientos)
-    );
+function eliminarMovimiento(indice) {
+  if (!confirm("¿Eliminar este movimiento?")) return;
+  movimientos.splice(indice, 1);
+  if (editandoIndice === indice) cancelarEdicion();
+  guardarLS();
+  poblarFiltroMeses();
+  renderizar();
+}
 
-    renderizar();
+function guardarLS() {
+  localStorage.setItem("movimientos", JSON.stringify(movimientos));
+}
+
+function poblarFiltroMeses() {
+  const sel = document.getElementById("filtroMes");
+  const actual = sel.value;
+  const meses = new Set();
+  movimientos.forEach(m => {
+    if (m.fecha && m.fecha.length >= 7) meses.add(m.fecha.slice(0, 7));
+  });
+  sel.innerHTML = '<option value="">Todos los meses</option>';
+  [...meses].sort().reverse().forEach(mes => {
+    const [anio, num] = mes.split("-");
+    const nombre = new Date(anio, num - 1).toLocaleDateString("es-AR", { month: "long", year: "numeric" });
+    const opt = document.createElement("option");
+    opt.value = mes;
+    opt.textContent = nombre.charAt(0).toUpperCase() + nombre.slice(1);
+    if (mes === actual) opt.selected = true;
+    sel.appendChild(opt);
+  });
 }
 
 function renderizar() {
+  const filtroMes  = document.getElementById("filtroMes").value;
+  const filtroTipo = document.getElementById("filtroTipo").value;
 
-    const tabla = document.getElementById("tablaMovimientos");
+  const filtrados = movimientos.filter(m => {
+    const okMes  = !filtroMes  || (m.fecha && m.fecha.startsWith(filtroMes));
+    const okTipo = !filtroTipo || m.tipo === filtroTipo;
+    return okMes && okTipo;
+  });
 
-    tabla.innerHTML = "";
+  const tabla = document.getElementById("tablaMovimientos");
+  tabla.innerHTML = "";
 
-    let ingresos = 0;
-    let egresos = 0;
+  let ingresos = 0, egresos = 0;
+  movimientos.forEach(m => {
+    if (m.tipo === "Ingreso") ingresos += m.monto;
+    else                      egresos  += m.monto;
+  });
 
-    movimientos.forEach((mov, indice) => {
+  document.getElementById("totalIngresos").textContent = "$" + ingresos.toLocaleString("es-AR");
+  document.getElementById("totalEgresos").textContent  = "$" + egresos.toLocaleString("es-AR");
+  document.getElementById("saldoTotal").textContent    = "$" + (ingresos - egresos).toLocaleString("es-AR");
 
-        if (mov.tipo === "Ingreso") {
-            ingresos += mov.monto;
-        } else {
-            egresos += mov.monto;
-        }
-
-        tabla.innerHTML += `
-            <tr>
-                <td>${mov.fecha}</td>
-                <td>${mov.tipo}</td>
-                <td>${mov.categoria}</td>
-                <td>$${mov.monto.toLocaleString()}</td>
-                <td>
-                    <button onclick="eliminarMovimiento(${indice})">
-                        🗑️
-                    </button>
-                </td>
-            </tr>
-        `;
+  const sinMov = document.getElementById("sinMovimientos");
+  if (filtrados.length === 0) {
+    sinMov.style.display = "block";
+  } else {
+    sinMov.style.display = "none";
+    filtrados.forEach(mov => {
+      const idxReal = movimientos.indexOf(mov);
+      const fecha = mov.fecha
+        ? new Date(mov.fecha + "T00:00:00").toLocaleDateString("es-AR")
+        : "";
+      const fila = document.createElement("tr");
+      fila.innerHTML = `
+        <td>${fecha}</td>
+        <td><span class="badge badge-${mov.tipo.toLowerCase()}">${mov.tipo}</span></td>
+        <td>${mov.categoria}</td>
+        <td class="monto-${mov.tipo.toLowerCase()}">$${mov.monto.toLocaleString("es-AR")}</td>
+        <td style="color:#888;font-size:0.85rem">${mov.descripcion || "—"}</td>
+        <td>
+          <button class="btn-accion" onclick="editarMovimiento(${idxReal})" title="Editar">✏️</button>
+          <button class="btn-accion" onclick="eliminarMovimiento(${idxReal})" title="Eliminar">🗑️</button>
+        </td>
+      `;
+      tabla.appendChild(fila);
     });
+  }
 
-    document.getElementById("totalIngresos").innerText =
-        "$" + ingresos.toLocaleString();
-
-    document.getElementById("totalEgresos").innerText =
-        "$" + egresos.toLocaleString();
-
-    document.getElementById("saldoTotal").innerText =
-        "$" + (ingresos - egresos).toLocaleString();
+  actualizarGraficos(ingresos, egresos);
 }
 
-actualizarCategorias();
-renderizar();
+function actualizarGraficos(ingresos, egresos) {
+  const ctxTorta = document.getElementById("graficoTorta").getContext("2d");
+  if (graficoTorta) graficoTorta.destroy();
+  graficoTorta = new Chart(ctxTorta, {
+    type: "doughnut",
+    data: {
+      labels: ["Ingresos", "Egresos"],
+      datasets: [{
+        data: [ingresos, egresos],
+        backgroundColor: ["#2196f3", "#e74c3c"],
+        borderWidth: 0,
+        hoverOffset: 6
+      }]
+    },
+    options: {
+      cutout: "65%",
+      plugins: {
+        legend: { position: "bottom", labels: { font: { size: 12 }, padding: 12 } }
+      },
+      animation: { duration: 500 }
+    }
+  });
+
+  const ctxBarras = document.getElementById("graficoBarras").getContext("2d");
+  if (graficoBarras) graficoBarras.destroy();
+
+  const hoy = new Date();
+  const meses = [], datosIng = [], datosEgr = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+    const clave = d.toISOString().slice(0, 7);
+    const label = d.toLocaleDateString("es-AR", { month: "short", year: "2-digit" });
+    meses.push(label);
+    let ing = 0, egr = 0;
+    movimientos.forEach(m => {
+      if (m.fecha && m.fecha.startsWith(clave)) {
+        if (m.tipo === "Ingreso") ing += m.monto;
+        else                      egr += m.monto;
+      }
+    });
+    datosIng.push(ing);
+    datosEgr.push(egr);
+  }
+
+  graficoBarras = new Chart(ctxBarras, {
+    type: "bar",
+    data: {
+      labels: meses,
+      datasets: [
+        { label: "Ingresos", data: datosIng, backgroundColor: "#2196f3", borderRadius: 6 },
+        { label: "Egresos",  data: datosEgr, backgroundColor: "#e74c3c", borderRadius: 6 }
+      ]
+    },
+    options: {
+      plugins: {
+        legend: { position: "bottom", labels: { font: { size: 12 }, padding: 12 } }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { callback: v => "$" + v.toLocaleString("es-AR"), font: { size: 11 } },
+          grid: { color: "#f0f2f5" }
+        },
+        x: { grid: { display: false } }
+      },
+      animation: { duration: 500 }
+    }
+  });
+}
+
+function exportarCSV() {
+  if (movimientos.length === 0) { alert("No hay movimientos para exportar."); return; }
+  const encabezado = ["Fecha","Tipo","Categoría","Monto","Descripción"];
+  const filas = movimientos.map(m => [m.fecha, m.tipo, m.categoria, m.monto, m.descripcion || ""]);
+  const csv = [encabezado, ...filas]
+    .map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href = url;
+  a.download = `alkaranta-finanzas-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
