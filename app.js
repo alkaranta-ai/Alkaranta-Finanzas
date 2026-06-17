@@ -214,4 +214,26 @@ function actualizarGraficos(ingresos, egresos) {
       labels: meses,
       datasets: [
         { label: "Ingresos", data: datosIng, backgroundColor: "#2196f3", borderRadius: 6 },
-        { label: "Egresos",
+        { label: "Egresos",  data: datosEgr, backgroundColor: "#e74c3c", borderRadius: 6 }
+      ]
+    },
+    options: { plugins: { legend: { position: "bottom" } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
+  });
+}
+
+function exportarCSV() {
+  if (movimientos.length === 0) { alert("No hay movimientos para exportar."); return; }
+  const encabezado = ["Fecha","Tipo","Categoría","Monto","Descripción", "Entidad"];
+  const filas = movimientos.map(m => [m.fecha, m.tipo, m.categoria, m.monto, m.descripcion || "", m.entidad || "Personal"]);
+  const csv = [encabezado, ...filas].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href = url;
+  a.download = `finanzas-${modoActual}-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+function resetearFecha() {
+  document.getElementById("fecha").value = new Date().toISOString().split("T")[0];
+}
