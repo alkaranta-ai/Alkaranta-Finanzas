@@ -40,7 +40,10 @@
 
   <section class="formulario">
     <h2 id="tituloFormulario">Nuevo Movimiento</h2>
-    <input type="date" id="fecha">
+    <div style="display: flex; gap: 5px; align-items: center; margin-bottom: 10px;">
+  <input type="date" id="fecha" style="flex-grow: 1;">
+  <button type="button" onclick="resetearFecha()" style="padding: 5px 10px;">📅 Hoy</button>
+</div>
     <select id="tipo" onchange="actualizarCategorias()">
       <option value="Ingreso">Ingreso</option>
       <option value="Egreso">Egreso</option>
