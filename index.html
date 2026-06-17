@@ -91,5 +91,21 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="app.js"></script>
+  <p id="sinMovimientos" class="sin-datos" style="display:none">No hay movimientos para mostrar.</p>
+  </section>
+
+</div>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('Service Worker registrado correctamente'))
+        .catch(err => console.log('Error al registrar el Service Worker:', err));
+    });
+  }
+</script>
+
+</body> </html>
 </body>
 </html>
