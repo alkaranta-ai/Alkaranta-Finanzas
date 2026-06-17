@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alkaranta Finanzas</title>
+
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>💰 Alkaranta Finanzas</h1>
+
+    <div class="saldo">
+        <h2>Saldo Actual</h2>
+        <p id="saldo">$0</p>
+    </div>
+
+    <div class="formulario">
+
+        <select id="tipo">
+            <option>Ingreso</option>
+            <option>Egreso</option>
+        </select>
+
+        <select id="categoria">
+            <option>Sueldo</option>
+            <option>Supermercado</option>
+        </select>
+
+        <input type="number" id="monto" placeholder="Monto">
+
+        <input type="text" id="descripcion" placeholder="Descripción">
+
+        <button onclick="guardarMovimiento()">
+            Guardar
+        </button>
+
+    </div>
+
+    <div id="movimientos"></div>
+
+</div>
+
+<script src="app.js"></script>
+
+</body>
+</html>
