@@ -1,130 +1,232 @@
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial, Helvetica, sans-serif;
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
-
-body{
-    background:#f1f3f5;
-    color:#333;
+body {
+  font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+  background: #f0f2f5;
+  color: #2c2c2c;
+  min-height: 100vh;
 }
-
-.container{
-    max-width:1200px;
-    margin:auto;
-    padding:20px;
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
 }
-
-header{
-    text-align:center;
-    margin-bottom:30px;
+header {
+  text-align: center;
+  margin-bottom: 32px;
 }
-
-header h1{
-    color:#6d6d6d;
-    margin-bottom:10px;
+header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  letter-spacing: -0.5px;
 }
-
-header p{
-    color:#777;
+header p {
+  color: #666;
+  margin-top: 6px;
+  font-size: 0.95rem;
 }
-
-.cards{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    gap:20px;
-    margin-bottom:30px;
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
 }
-
-.card{
-    background:linear-gradient(135deg,#c0c0c0,#e5e5e5);
-    padding:25px;
-    border-radius:15px;
-    text-align:center;
-    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+.card {
+  padding: 24px 20px;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  color: #fff;
 }
-
-.card h3{
-    margin-bottom:10px;
+.card h3 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  opacity: 0.85;
+  margin-bottom: 10px;
 }
-
-.card span{
-    font-size:28px;
-    font-weight:bold;
+.card span {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -1px;
 }
-
-.formulario{
-    background:white;
-    padding:25px;
-    border-radius:15px;
-    margin-bottom:30px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.08);
+.card-saldo    { background: linear-gradient(135deg, #1a1a2e, #16213e); }
+.card-ingresos { background: linear-gradient(135deg, #1b6ca8, #2196f3); }
+.card-egresos  { background: linear-gradient(135deg, #c0392b, #e74c3c); }
+.grafico {
+  background: #fff;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  margin-bottom: 24px;
 }
-
-.formulario h2{
-    margin-bottom:20px;
+.grafico h2 {
+  margin-bottom: 20px;
+  font-size: 1rem;
+  color: #444;
+  font-weight: 600;
 }
-
-select,
-input{
-    width:100%;
-    padding:12px;
-    margin-bottom:12px;
-    border:1px solid #d0d0d0;
-    border-radius:10px;
+.grafico-inner {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 24px;
+  align-items: center;
 }
-
-button{
-    width:100%;
-    padding:14px;
-    border:none;
-    border-radius:10px;
-    background:#8a8a8a;
-    color:white;
-    font-weight:bold;
-    cursor:pointer;
+#graficoTorta  { max-height: 220px; }
+#graficoBarras { max-height: 220px; }
+.formulario {
+  background: #fff;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  margin-bottom: 24px;
 }
-
-button:hover{
-    background:#707070;
+.formulario h2 {
+  margin-bottom: 18px;
+  font-size: 1rem;
+  color: #444;
+  font-weight: 600;
 }
-
-.tabla{
-    background:white;
-    padding:25px;
-    border-radius:15px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.08);
+.formulario input,
+.formulario select {
+  width: 100%;
+  padding: 11px 14px;
+  margin-bottom: 12px;
+  border: 1.5px solid #dde1e7;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  background: #fafafa;
+  color: #222;
+  transition: border-color 0.2s;
+  outline: none;
 }
-
-.tabla h2{
-    margin-bottom:20px;
+.formulario input:focus,
+.formulario select:focus {
+  border-color: #1b6ca8;
+  background: #fff;
 }
-
-table{
-    width:100%;
-    border-collapse:collapse;
+.btn-group {
+  display: flex;
+  gap: 10px;
 }
-
-th{
-    background:#c0c0c0;
-    padding:12px;
+button {
+  flex: 1;
+  padding: 13px;
+  border: none;
+  border-radius: 10px;
+  background: #1a1a2e;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
 }
-
-td{
-    padding:12px;
-    border-bottom:1px solid #eee;
-    text-align:center;
+button:hover  { background: #2c2c54; }
+button:active { transform: scale(0.98); }
+.btn-cancelar {
+  background: #e0e0e0;
+  color: #444;
 }
-
-@media(max-width:768px){
-
-    .card span{
-        font-size:22px;
-    }
-
-    table{
-        font-size:12px;
-    }
-
+.btn-cancelar:hover { background: #ccc; }
+.filtros {
+  margin-bottom: 16px;
+}
+.filtros-inner {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filtros-inner select {
+  padding: 9px 13px;
+  border: 1.5px solid #dde1e7;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  outline: none;
+}
+.btn-export {
+  padding: 9px 16px;
+  background: #2196f3;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  margin-left: auto;
+}
+.btn-export:hover { background: #1b6ca8; }
+.tabla {
+  background: #fff;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+}
+.tabla h2 {
+  margin-bottom: 16px;
+  font-size: 1rem;
+  color: #444;
+  font-weight: 600;
+}
+.tabla-scroll { overflow-x: auto; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th {
+  background: #f0f2f5;
+  color: #555;
+  font-size: 0.78rem;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 11px 14px;
+  text-align: center;
+  font-weight: 600;
+}
+td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f0f2f5;
+  text-align: center;
+  font-size: 0.92rem;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fafbfc; }
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.badge-ingreso { background: #e3f2fd; color: #1b6ca8; }
+.badge-egreso  { background: #fdecea; color: #c0392b; }
+.monto-ingreso { color: #1b6ca8; font-weight: 600; }
+.monto-egreso  { color: #c0392b; font-weight: 600; }
+.btn-accion {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.btn-accion:hover { background: #f0f2f5; }
+.sin-datos {
+  text-align: center;
+  color: #aaa;
+  padding: 32px 0;
+  font-size: 0.95rem;
+}
+@media (max-width: 768px) {
+  header h1 { font-size: 1.5rem; }
+  .card span { font-size: 1.5rem; }
+  .grafico-inner { grid-template-columns: 1fr; }
+  #graficoTorta  { max-height: 180px; }
+  #graficoBarras { max-height: 180px; }
+  .btn-export { margin-left: 0; }
+  td, th { font-size: 0.8rem; padding: 9px 8px; }
 }
