@@ -137,7 +137,7 @@ function renderizar() {
   document.getElementById("totalIngresos").textContent = "$" + ingresos.toLocaleString("es-AR");
   document.getElementById("totalEgresos").textContent  = "$" + egresos.toLocaleString("es-AR");
   document.getElementById("saldoTotal").textContent    = "$" + (ingresos - egresos).toLocaleString("es-AR");
-
+document.getElementById("saldoTotal").style.color = (ingresos - egresos) < 0 ? "#e74c3c" : "#27ae60";
   const sinMov = document.getElementById("sinMovimientos");
   if (filtrados.length === 0) {
     sinMov.style.display = "block";
