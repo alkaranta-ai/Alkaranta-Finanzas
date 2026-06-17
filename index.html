@@ -3,104 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alkaranta Silver — Personal Finance</title>
+    <title>Alkaranta Elite — Silver Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#C0C0C0">
     <style>
         :root {
             --silver: #C0C0C0;
             --platinum: #E5E4E2;
-            --charcoal: #1A1A1A;
-            --white: #FFFFFF;
-            --accent: #2F2F2F;
+            --charcoal: #0a0a0a;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Inter', sans-serif; background: var(--platinum); color: var(--charcoal); min-height: 100vh; }
-        
-        header { background: var(--charcoal); color: var(--silver); padding: 30px 20px; text-align: center; border-bottom: 5px solid var(--silver); }
-        header h1 { font-family: 'Playfair Display', serif; font-size: 32px; letter-spacing: 4px; }
+        body { font-family: 'Inter', sans-serif; background: var(--charcoal); color: var(--platinum); min-height: 100vh; }
 
-        nav { display: flex; justify-content: space-around; background: white; padding: 15px 0; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 100; }
-        .nav-btn { background: none; border: none; color: #888; font-size: 11px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; }
-        .nav-btn.active { color: var(--charcoal); font-weight: 700; border-bottom: 2px solid var(--charcoal); }
-        .nav-btn i { display: block; font-size: 20px; margin-bottom: 5px; }
+        header { padding: 40px 20px; text-align: center; background: radial-gradient(circle at top, #1a1a1a, #0a0a0a); border-bottom: 1px solid var(--glass-border); }
+        header h1 { font-family: 'Playfair Display', serif; font-size: 32px; letter-spacing: 5px; color: var(--silver); }
 
-        main { padding: 20px; max-width: 500px; margin: 0 auto; }
-        .card { background: white; padding: 25px; border-radius: 2px; margin-bottom: 20px; border: 1px solid #ddd; border-top: 5px solid var(--charcoal); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
-        .card-title { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 20px; color: var(--charcoal); }
+        nav { display: flex; justify-content: space-around; background: rgba(10,10,10,0.8); backdrop-filter: blur(10px); padding: 15px 0; border-bottom: 1px solid var(--glass-border); position: sticky; top: 0; z-index: 100; }
+        .nav-btn { background: none; border: none; color: #666; font-size: 10px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; }
+        .nav-btn.active { color: var(--silver); font-weight: 700; }
+        .nav-btn i { display: block; font-size: 18px; margin-bottom: 4px; }
 
-        .form-group { margin-bottom: 15px; }
-        label { font-size: 11px; font-weight: 600; text-transform: uppercase; color: #666; display: block; margin-bottom: 5px; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ccc; font-family: inherit; }
-        .btn-main { width: 100%; padding: 15px; background: var(--charcoal); color: var(--silver); border: none; font-weight: 600; cursor: pointer; letter-spacing: 1px; }
+        main { padding: 20px; max-width: 480px; margin: 0 auto; }
+        .card { background: var(--glass); backdrop-filter: blur(15px); border: 1px solid var(--glass-border); padding: 25px; margin-bottom: 20px; border-top: 3px solid var(--silver); position: relative; overflow: hidden; }
+        .card-title { font-family: 'Playfair Display', serif; font-size: 20px; margin-bottom: 20px; letter-spacing: 1px; color: var(--silver); }
 
-        .stat-row { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px; }
-        .bar-bg { background: #eee; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 5px; }
-        .bar-fill { height: 100%; transition: width 0.8s ease; }
+        .balance-big { font-size: 42px; font-weight: 300; text-align: center; margin: 20px 0; font-family: 'Playfair Display', serif; color: white; text-shadow: 0 0 20px rgba(192,192,192,0.2); }
 
-        .diagnosis-msg { font-size: 14px; line-height: 1.6; font-style: italic; color: #444; border-left: 3px solid var(--silver); padding-left: 15px; margin-top: 20px; }
-        #balance-display { font-size: 40px; font-weight: 300; text-align: center; margin: 10px 0; font-family: 'Playfair Display', serif; }
+        label { font-size: 10px; font-weight: 600; text-transform: uppercase; color: #888; display: block; margin-bottom: 8px; letter-spacing: 1px; }
+        select, input { width: 100%; padding: 14px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white; font-family: inherit; margin-bottom: 20px; border-radius: 4px; }
+        select option { background: #1a1a1a; color: white; }
+        .btn-elite { width: 100%; padding: 18px; background: var(--silver); color: #000; border: none; font-weight: 700; cursor: pointer; letter-spacing: 2px; text-transform: uppercase; font-size: 12px; }
+
+        .diag-row { margin-bottom: 20px; }
+        .diag-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; color: #aaa; }
+        .diag-bar-bg { background: #1a1a1a; height: 6px; border-radius: 3px; overflow: hidden; }
+        .diag-bar-fill { height: 100%; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        .msg-box { font-size: 13px; line-height: 1.6; color: #888; padding: 15px; border-left: 2px solid var(--silver); background: rgba(255,255,255,0.02); margin-top: 20px; font-style: italic; }
     </style>
 </head>
 <body>
 
 <header>
     <h1>ALKARANTA</h1>
-    <p style="font-size: 10px; margin-top: 5px; opacity: 0.8;">ESTÁNDAR SILVER</p>
+    <p style="font-size: 9px; letter-spacing: 4px; color: #666; margin-top: 8px;">SILVER ELITE EDITION</p>
 </header>
 
 <nav>
-    <button class="nav-btn active" onclick="showPage('inicio')"><i class="fa-solid fa-chart-pie"></i>Resumen</button>
-    <button class="nav-btn" onclick="showPage('add')"><i class="fa-solid fa-plus-circle"></i>Registro</button>
-    <button class="nav-btn" onclick="showPage('diag')"><i class="fa-solid fa-gem"></i>Diagnóstico</button>
+    <button class="nav-btn active" onclick="showPage('inicio')"><i class="fa-solid fa-vault"></i>Vault</button>
+    <button class="nav-btn" onclick="showPage('add')"><i class="fa-solid fa-plus"></i>Registro</button>
+    <button class="nav-btn" onclick="showPage('diag')"><i class="fa-solid fa-gem"></i>Elite Diag</button>
 </nav>
 
 <main>
     <div id="page-inicio" class="page" style="display: block;">
         <div class="card">
-            <h2 class="card-title">Balance Disponible</h2>
-            <div id="balance-display">$0.00</div>
+            <h2 class="card-title">Balance de Capital</h2>
+            <div class="balance-big" id="balance-val">$0.00</div>
+            <p style="text-align: center; font-size: 11px; color: #555;">Sincronizado con Google Cloud</p>
+        </div>
+        <div class="card">
+            <h2 class="card-title">Últimos Movimientos</h2>
+            <div id="historial" style="font-size: 12px; color: #888;">No hay registros recientes.</div>
         </div>
     </div>
 
     <div id="page-add" class="page" style="display: none;">
         <div class="card">
-            <h2 class="card-title">Cargar Movimiento</h2>
-            <div class="form-group">
-                <label>Tipo de Flujo</label>
-                <select id="tipo">
-                    <option value="ingreso">Ingreso (+)</option>
-                    <option value="necesidad">Egreso: Necesidad (50%)</option>
-                    <option value="deseo">Egreso: Deseo (30%)</option>
-                    <option value="ahorro">Egreso: Ahorro (20%)</option>
+            <h2 class="card-title">Nuevo Registro</h2>
+            
+            <label>Tipo de Transacción</label>
+            <select id="categoria" onchange="updateSubCat()">
+                <option value="ingreso">Ingreso de Capital (+)</option>
+                <option value="necesidad">Gasto: Necesidad (50%)</option>
+                <option value="deseo">Gasto: Deseo (30%)</option>
+                <option value="ahorro">Gasto: Ahorro/Inversión (20%)</option>
+            </select>
+
+            <label>Detalle Específico</label>
+            <select id="subcategoria">
                 </select>
-            </div>
-            <div class="form-group">
-                <label>Monto ($)</label>
-                <input type="number" id="monto" placeholder="0.00">
-            </div>
-            <div class="form-group">
-                <label>Concepto</label>
-                <input type="text" id="desc" placeholder="Ej: Sueldo o Café">
-            </div>
-            <button class="btn-main" onclick="registrar()">REGISTRAR MOVIMIENTO</button>
+
+            <label>Monto del Capital ($)</label>
+            <input type="number" id="monto" placeholder="0.00">
+
+            <button class="btn-elite" onclick="registrar()">PROCESAR REGISTRO</button>
         </div>
     </div>
 
     <div id="page-diag" class="page" style="display: none;">
         <div class="card">
-            <h2 class="card-title">Diagnóstico 50/30/20</h2>
+            <h2 class="card-title">Análisis de Salud 50/30/20</h2>
             <div id="diag-bars"></div>
-            <div id="diag-text" class="diagnosis-msg">Carga datos para ver tu análisis.</div>
+            <div id="diag-msg" class="msg-box">Esperando datos de capital...</div>
         </div>
     </div>
 </main>
 
 <script>
-    const SHEETS_URL = "URL_DE_TU_APPS_SCRIPT_AQUI"; // Pegar aquí la URL de Google Sheets
-    let datos = JSON.parse(localStorage.getItem('alkaranta_silver')) || [];
+    const subCats = {
+        ingreso: ["Sueldo", "Venta", "Renta", "Inversión", "Otro"],
+        necesidad: ["Alquiler/Hipoteca", "Servicios (Luz/Agua)", "Supermercado", "Salud/Seguros", "Transporte", "Educación"],
+        deseo: ["Restaurantes/Delivery", "Salidas/Cine", "Suscripciones (Netflix/Spotify)", "Café/Gastos Hormiga", "Ropa/Hobby", "Viajes"],
+        ahorro: ["Fondo Emergencia", "Inversión Bolsa/Cripto", "Retiro/Seguros Vida", "Ahorro Meta Específica"]
+    };
+
+    let data = JSON.parse(localStorage.getItem('alkaranta_elite')) || [];
+
+    function updateSubCat() {
+        const cat = document.getElementById('categoria').value;
+        const sub = document.getElementById('subcategoria');
+        sub.innerHTML = subCats[cat].map(s => `<option value="${s}">${s}</option>`).join('');
+    }
 
     function showPage(id) {
         document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
@@ -111,60 +128,102 @@
     }
 
     function registrar() {
-        const t = document.getElementById('tipo').value;
-        const m = parseFloat(document.getElementById('monto').value);
-        const d = document.getElementById('desc').value;
-        if (!m) return alert("Monto inválido");
+        const cat = document.getElementById('categoria').value;
+        const sub = document.getElementById('subcategoria').value;
+        const mon = parseFloat(document.getElementById('monto').value);
+        
+        if(!mon) return alert("Capital no válido.");
 
-        const nuevo = { tipo: t, monto: m, desc: d, fecha: new Date().toLocaleDateString() };
-        datos.push(nuevo);
-        localStorage.setItem('alkaranta_silver', JSON.stringify(datos));
+        const mov = { cat, sub, mon, fecha: new Date().toLocaleDateString() };
+        data.push(mov);
+        localStorage.setItem('alkaranta_elite', JSON.stringify(data));
         
-        // Limpiar
         document.getElementById('monto').value = '';
-        document.getElementById('desc').value = '';
-        
-        alert("Registrado correctamente");
+        alert("Registro procesado con éxito.");
         showPage('inicio');
     }
 
     function actualizar() {
-        let ingresos = 0, n = 0, d = 0, a = 0;
-        datos.forEach(x => {
-            if (x.tipo === 'ingreso') ingresos += x.monto;
-            else if (x.tipo === 'necesidad') n += x.monto;
-            else if (x.tipo === 'deseo') d += x.monto;
-            else if (x.tipo === 'ahorro') a += x.monto;
+        let ing = 0, n = 0, d = 0, a = 0;
+        data.forEach(m => {
+            if(m.cat === 'ingreso') ing += m.mon;
+            else if(m.cat === 'necesidad') n += m.mon;
+            else if(m.cat === 'deseo') d += m.mon;
+            else if(m.cat === 'ahorro') a += m.mon;
         });
 
-        const gastosTotal = n + d + a;
-        document.getElementById('balance-display').innerText = `$${(ingresos - gastosTotal).toLocaleString()}`;
+        document.getElementById('balance-val').innerText = `$${(ing - (n+d+a)).toLocaleString()}`;
 
-        if (ingresos > 0) {
-            const pn = (n/ingresos*100).toFixed(0);
-            const pd = (d/ingresos*100).toFixed(0);
-            const pa = (a/ingresos*100).toFixed(0);
+        if(ing > 0) {
+            const pn = (n/ing*100).toFixed(0);
+            const pd = (d/ing*100).toFixed(0);
+            const pa = (a/ing*100).toFixed(0);
 
             document.getElementById('diag-bars').innerHTML = `
-                <div class="stat-row"><span>Necesidades: ${pn}%</span><span>Meta: 50%</span></div>
-                <div class="bar-bg"><div class="bar-fill" style="width:${pn}%; background:#1a1a1a"></div></div>
-                <br>
-                <div class="stat-row"><span>Deseos: ${pd}%</span><span>Meta: 30%</span></div>
-                <div class="bar-bg"><div class="bar-fill" style="width:${pd}%; background:#888"></div></div>
-                <br>
-                <div class="stat-row"><span>Ahorro: ${pa}%</span><span>Meta: 20%</span></div>
-                <div class="bar-bg"><div class="bar-fill" style="width:${pa}%; background:#C0C0C0"></div></div>
+                ${renderBar('Necesidades', pn, 50, 'white')}
+                ${renderBar('Deseos', pd, 30, '#888')}
+                ${renderBar('Ahorro/Inv.', pa, 20, 'var(--silver)')}
             `;
 
-            let msg = "";
-            if (pn > 50) msg = "Tus necesidades están excedidas. Revisa tus gastos fijos.";
-            else if (pd > 30) msg = "Estás gastando mucho en deseos. Controla los gastos hormiga.";
-            else if (pa < 20) msg = "Debes priorizar más tu ahorro. Intenta ahorrar antes de gastar.";
-            else msg = "¡Perfecto! Tus finanzas están en equilibrio Silver.";
-            document.getElementById('diag-text').innerText = msg;
+            let msg = "Tu balance es óptimo.";
+            if(pn > 50) msg = "Alerta: Tus necesidades superan el 50%. Sugerencia: Audita tus servicios y alquiler.";
+            else if(pd > 30) msg = "Alerta: Exceso de deseos. Corta 'Gastos Hormiga' para recuperar el equilibrio.";
+            else if(pa < 20) msg = "Atención: Tu ahorro es bajo. Prioriza tu libertad financiera.";
+            
+            document.getElementById('diag-msg').innerText = msg;
+        }
+
+        const hist = document.getElementById('historial');
+        if(data.length > 0) {
+            hist.innerHTML = data.slice(-3).reverse().map(m => 
+                `<div style="display:flex; justify-content:space-between; border-bottom:1px solid #1a1a1a; padding:8px 0;">
+                    <span>${m.sub}</span><span style="color:${m.cat==='ingreso'?'#fff':'#888'}">${m.cat==='ingreso'?'+':'-'}$${m.mon}</span>
+                </div>`
+            ).join('');
         }
     }
+
+    updateSubCat();
     actualizar();
 </script>
 </body>
 </html>
+
+### PASO 2: Actualiza tu `manifest.json` (Nuevos colores)
+Copia esto para que el tema se vea integrado en tu móvil:
+
+```json
+{
+  "name": "Alkaranta Elite",
+  "short_name": "Alkaranta",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#C0C0C0",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2953/2953363.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+
+### PASO 3: Google Sheets Apps Script (Actualizado)
+He modificado el script para que acepte la **sub-categoría**:
+
+```javascript
+function doPost(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Movimientos") || ss.insertSheet("Movimientos");
+  var data = JSON.parse(e.postData.contents);
+  
+  if (sheet.getLastRow() == 0) {
+    sheet.appendRow(["Fecha", "Categoría", "Sub-Categoría", "Monto"]);
+  }
+  
+  sheet.appendRow([data.fecha, data.cat, data.sub, data.mon]);
+  return ContentService.createTextOutput("OK");
+}
+
+¿Qué te parece este salto de calidad? Ahora tienes un sistema que no solo guarda datos, sino que se siente como una herramienta financiera profesional. ¿Quieres que ajustemos algún color o añadamos alguna otra categoría a la lista?
