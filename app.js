@@ -36,7 +36,6 @@ function actualizarCategorias() {
   });
 }
 
-// Función auxiliar para saber si un movimiento pertenece al modo actual
 function perteneceAlModo(m) {
   const entidad = m.entidad || 'personal';
   return entidad === modoActual;
@@ -115,7 +114,6 @@ function poblarFiltroMeses() {
   const sel = document.getElementById("filtroMes");
   const actual = sel.value;
   const meses = new Set();
-  // Solo consideramos los meses de los movimientos que pertenecen al modo actual
   movimientos.filter(perteneceAlModo).forEach(m => {
     if (m.fecha && m.fecha.length >= 7) meses.add(m.fecha.slice(0, 7));
   });
@@ -172,13 +170,32 @@ function renderizar() {
         <td style="color:#888;font-size:0.85rem">${mov.descripcion || "—"}</td>
         <td>
           <button class="btn-accion" onclick="editarMovimiento(${idxReal})" title="Editar">✏️</button>
-          <button class="btn-accion" onclick="eliminarMovimiento(${idxReal})" title="🗑️">🗑️</button>
+          <button class="btn-accion" onclick="eliminarMovimiento(${idxReal})" title="Eliminar">🗑️</button>
         </td>
       `;
       tabla.appendChild(fila);
     });
   }
   actualizarGraficos(ingresos, egresos);
+  actualizarResumenCategorias(filtrados);
+}
+
+function actualizarResumenCategorias(filtrados) {
+  const contenedor = document.getElementById("listaCategorias");
+  contenedor.innerHTML = ""; 
+  const resumen = {};
+  filtrados.forEach(m => {
+    resumen[m.categoria] = (resumen[m.categoria] || 0) + m.monto;
+  });
+  Object.keys(resumen).forEach(cat => {
+    const div = document.createElement("div");
+    div.style.display = "flex";
+    div.style.justifyContent = "space-between";
+    div.style.padding = "8px 0";
+    div.style.borderBottom = "1px solid #eee";
+    div.innerHTML = `<span>${cat}</span> <strong>$${resumen[cat].toLocaleString("es-AR")}</strong>`;
+    contenedor.appendChild(div);
+  });
 }
 
 function actualizarGraficos(ingresos, egresos) {
