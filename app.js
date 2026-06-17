@@ -251,4 +251,9 @@ function exportarCSV() {
   a.download = `alkaranta-finanzas-${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
+URL.revokeObjectURL(url);
+}
+
+function resetearFecha() {
+  document.getElementById("fecha").value = new Date().toISOString().split("T")[0];
 }
