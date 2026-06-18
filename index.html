@@ -52,7 +52,6 @@
     html {
       scroll-behavior: smooth;
       -webkit-tap-highlight-color: transparent;
-      /* FIX: evita rotación horizontal en algunos dispositivos */
       overflow-x: hidden;
     }
     body {
@@ -60,11 +59,9 @@
       background: var(--bg);
       color: var(--text-1);
       min-height: 100vh;
-      /* FIX: padding suficiente para que el contenido no quede bajo la nav */
       padding-bottom: 100px;
       font-size: 15px;
       -webkit-font-smoothing: antialiased;
-      /* FIX: evita scroll horizontal que simula "modo horizontal" */
       overflow-x: hidden;
       width: 100%;
     }
@@ -96,7 +93,6 @@
       font-size: 13px; font-weight: 500; font-family: inherit;
       transition: all .2s cubic-bezier(.4,0,.2,1);
       color: var(--text-2); background: transparent;
-      /* FIX: asegura que el touch funcione bien */
       touch-action: manipulation;
       -webkit-user-select: none; user-select: none;
     }
@@ -238,6 +234,9 @@
       font-family: inherit; cursor: pointer; transition: all .15s; display: none;
       touch-action: manipulation;
     }
+    /* Siempre visible dentro de modales */
+    .modal-btns .btn-secondary { display: block; }
+
     .btn-today {
       padding: 10px 14px; background: var(--surface-2); color: var(--text-2);
       border: 0.5px solid var(--border-strong); border-radius: var(--r-sm);
@@ -339,42 +338,46 @@
     .empty-icon { font-size: 36px; display: block; margin-bottom: 10px; opacity: 0.4; }
 
     /* ── MODAL ── */
+    /* Overlay centrado — no compite con el teclado virtual */
     .overlay {
       display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,0.5); z-index: 200;
-      align-items: flex-end; justify-content: center; padding: 0;
+      background: rgba(0,0,0,0.55); z-index: 200;
+      align-items: center; justify-content: center;
+      padding: 16px;
       backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
     }
     .overlay.open { display: flex; }
     .modal-sheet {
-      background: var(--surface); width: 100%; max-width: 640px;
-      border-radius: var(--r-xl) var(--r-xl) 0 0;
-      padding: 12px 20px 24px;
-      box-shadow: 0 -8px 40px rgba(0,0,0,0.2);
-      animation: slideUp .25s cubic-bezier(.4,0,.2,1);
-      max-height: 92vh; overflow-y: auto;
-      transition: transform 0.2s ease;
-      will-change: transform;
+      background: var(--surface); width: 100%; max-width: 480px;
+      border-radius: var(--r-xl);
+      padding: 24px 20px 24px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+      animation: popIn .2s cubic-bezier(.4,0,.2,1);
+      max-height: 88vh; overflow-y: auto;
     }
-    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-    .modal-handle { width: 36px; height: 4px; background: var(--border-strong); border-radius: 999px; margin: 0 auto 18px; }
-    .modal-title { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; color: var(--text-1); margin-bottom: 18px; }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.95) translateY(12px); }
+      to   { opacity: 1; transform: scale(1)    translateY(0); }
+    }
+    .modal-title {
+      font-size: 17px; font-weight: 600; letter-spacing: -0.3px;
+      color: var(--text-1); margin-bottom: 16px;
+    }
     .modal-sheet .field input, .modal-sheet .field select { background: var(--surface-2); }
     .modal-field { margin-bottom: 12px; }
-    .modal-btns { display: flex; gap: 10px; margin-top: 16px; }
+    .modal-btns { display: flex; gap: 10px; }
     .modal-btns .btn-primary { flex: 2; width: auto; }
     .modal-btns .btn-secondary { flex: 1; width: auto; display: block; }
 
     /* ── BOTTOM NAV ── */
     .bottom-nav {
       position: fixed; bottom: 0; left: 0; right: 0;
-      /* FIX: z-index mayor que cualquier contenido de página */
       z-index: 999;
       background: var(--surface);
       border-top: 0.5px solid var(--border);
       display: flex; justify-content: space-around;
       padding: 8px 0 max(12px, env(safe-area-inset-bottom));
-      /* FIX: asegura que recibe eventos touch */
       touch-action: manipulation;
     }
     .nav-btn {
@@ -383,10 +386,8 @@
       color: var(--text-3); font-size: 10px; font-weight: 500;
       font-family: inherit; letter-spacing: 0.02em; padding: 4px 16px;
       border-radius: var(--r-sm); transition: color .15s;
-      /* FIX: crítico para que los taps funcionen en iOS/Android */
       touch-action: manipulation;
       -webkit-user-select: none; user-select: none;
-      /* FIX: área mínima de toque recomendada por Apple/Google */
       min-width: 48px; min-height: 48px;
       justify-content: center;
     }
@@ -518,26 +519,28 @@
 <!-- MODAL PRESUPUESTO -->
 <div class="overlay" id="modalPresupuesto">
   <div class="modal-sheet">
-    <div class="modal-handle"></div>
     <div class="modal-title">Agregar presupuesto</div>
-    <div class="modal-field field"><label>Categoría</label><select id="budgetCat"></select></div>
-    <div class="modal-field field"><label>Límite mensual</label><input type="number" id="budgetMonto" placeholder="0" min="0"></div>
-    <div class="modal-btns">
+    <div class="modal-btns" style="margin-bottom:16px">
       <button class="btn-primary" onclick="guardarPresupuesto()">Guardar</button>
       <button class="btn-secondary" onclick="cerrarModales()">Cancelar</button>
     </div>
+    <div class="modal-field field"><label>Categoría</label><select id="budgetCat"></select></div>
+    <div class="modal-field field"><label>Límite mensual</label><input type="number" id="budgetMonto" placeholder="0" min="0" inputmode="decimal"></div>
   </div>
 </div>
 
 <!-- MODAL META NUEVA -->
 <div class="overlay" id="modalMeta">
   <div class="modal-sheet">
-    <div class="modal-handle"></div>
     <div class="modal-title">Nueva meta</div>
+    <div class="modal-btns" style="margin-bottom:16px">
+      <button class="btn-primary" onclick="guardarMeta()">Guardar</button>
+      <button class="btn-secondary" onclick="cerrarModales()">Cancelar</button>
+    </div>
     <div class="modal-field field"><label>Nombre</label><input type="text" id="metaNombre" placeholder="Ej: Vacaciones, Auto..."></div>
     <div class="form-grid" style="margin-bottom:12px">
-      <div class="field"><label>Objetivo ($)</label><input type="number" id="metaObjetivo" placeholder="0" min="0"></div>
-      <div class="field"><label>Ya ahorrado ($)</label><input type="number" id="metaAhorrado" placeholder="0" min="0"></div>
+      <div class="field"><label>Objetivo ($)</label><input type="number" id="metaObjetivo" placeholder="0" min="0" inputmode="decimal"></div>
+      <div class="field"><label>Ya ahorrado ($)</label><input type="number" id="metaAhorrado" placeholder="0" min="0" inputmode="decimal"></div>
     </div>
     <div class="modal-field field"><label>Ícono</label>
       <select id="metaIcono">
@@ -550,25 +553,21 @@
         <option value="⭐">⭐ Otro</option>
       </select>
     </div>
-    <div class="modal-btns">
-      <button class="btn-primary" onclick="guardarMeta()">Guardar</button>
-      <button class="btn-secondary" onclick="cerrarModales()">Cancelar</button>
-    </div>
   </div>
 </div>
 
 <!-- MODAL AGREGAR AHORRO -->
 <div class="overlay" id="modalAhorro">
   <div class="modal-sheet">
-    <div class="modal-handle"></div>
     <div class="modal-title" id="modalAhorroTitulo">Agregar ahorro</div>
-    <!-- Botones ARRIBA del input: cuando sube el teclado en iOS,
-         los botones ya quedaron visibles por encima del campo -->
-    <div class="modal-btns" style="margin-top:0; margin-bottom:16px">
+    <div class="modal-btns" style="margin-bottom:16px">
       <button class="btn-primary" onclick="confirmarAhorro()">Agregar</button>
       <button class="btn-secondary" onclick="cerrarModales()">Cancelar</button>
     </div>
-    <div class="modal-field field"><label>Monto a agregar ($)</label><input type="number" id="ahorroMonto" placeholder="0" min="0" inputmode="decimal"></div>
+    <div class="modal-field field">
+      <label>Monto a agregar ($)</label>
+      <input type="number" id="ahorroMonto" placeholder="0" min="0" inputmode="decimal">
+    </div>
   </div>
 </div>
 
@@ -576,31 +575,27 @@
 <script src="app.js"></script>
 <script>
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); });
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    });
   }
 
-  // ── FIX TECLADO VIRTUAL (Android + iOS) ──
-  // iOS Safari no mueve elementos fixed cuando sube el teclado.
-  // Estrategia: mover el overlay completo con margin-bottom igual
-  // a la altura del teclado, usando visualViewport.
-
+  // ── FIX TECLADO VIRTUAL (iOS + Android) ──
+  // Cuando sube el teclado, el overlay centrado se reposiciona
+  // usando visualViewport para que siempre quede visible.
   function ajustarModalAlTeclado() {
     const overlay = document.querySelector('.overlay.open');
     if (!overlay) return;
     const vv = window.visualViewport;
     if (!vv) return;
-
-    const tecladoAlto = window.innerHeight - vv.height - vv.offsetTop;
-    const subida = Math.max(0, tecladoAlto);
-
-    // Mover el overlay entero hacia arriba empujando su padding-bottom
-    // Esto funciona en iOS Safari donde translateY en fixed no funciona
-    overlay.style.paddingBottom = subida > 0 ? subida + 'px' : '0px';
+    overlay.style.top    = vv.offsetTop + 'px';
+    overlay.style.height = vv.height + 'px';
   }
 
   function resetearModal() {
     document.querySelectorAll('.overlay').forEach(o => {
-      o.style.paddingBottom = '0px';
+      o.style.top    = '';
+      o.style.height = '';
     });
   }
 
@@ -609,17 +604,12 @@
     window.visualViewport.addEventListener('scroll', ajustarModalAlTeclado);
   }
 
-  // Al abrir el teclado en iOS, hacer scroll del sheet para mostrar los botones
-  document.getElementById('ahorroMonto').addEventListener('focus', () => {
-    setTimeout(() => {
-      ajustarModalAlTeclado();
-      const sheet = document.querySelector('#modalAhorro .modal-sheet');
-      if (sheet) sheet.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }, 350); // esperar a que el teclado termine de subir
-  });
-
+  // Cerrar al tocar el fondo del overlay
   document.addEventListener('click', e => {
-    if (e.target.classList.contains('overlay')) resetearModal();
+    if (e.target.classList.contains('overlay')) {
+      resetearModal();
+      cerrarModales();
+    }
   });
 </script>
 </body>
