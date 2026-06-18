@@ -342,16 +342,29 @@
     .overlay {
       display: none; position: fixed; inset: 0;
       background: rgba(0,0,0,0.5); z-index: 200;
+      /* FIX: flex-start + padding para que cuando sube el teclado
+         el modal quede en la parte visible y sea scrolleable */
       align-items: flex-end; justify-content: center; padding: 0;
       backdrop-filter: blur(4px);
+      /* FIX: permite scroll dentro del overlay si el contenido no entra */
+      overflow-y: auto;
     }
     .overlay.open { display: flex; }
     .modal-sheet {
       background: var(--surface); width: 100%; max-width: 640px;
       border-radius: var(--r-xl) var(--r-xl) 0 0;
-      padding: 12px 20px max(24px, env(safe-area-inset-bottom));
+      /* FIX: padding bottom generoso para que los botones no queden
+         tapados por la barra del sistema ni por el teclado */
+      padding: 12px 20px max(32px, env(safe-area-inset-bottom));
       box-shadow: 0 -8px 40px rgba(0,0,0,0.2);
       animation: slideUp .25s cubic-bezier(.4,0,.2,1);
+      /* FIX: el sheet puede crecer pero no superar el 90% de la pantalla,
+         y si el contenido no entra hace scroll interno */
+      max-height: 90dvh;
+      overflow-y: auto;
+      /* FIX: se queda pegado al fondo incluso cuando el teclado sube */
+      position: sticky;
+      bottom: 0;
     }
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     .modal-handle { width: 36px; height: 4px; background: var(--border-strong); border-radius: 999px; margin: 0 auto 18px; }
@@ -572,6 +585,19 @@
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); });
+  }
+
+  // FIX: cuando el teclado virtual sube, hace scroll para que los botones
+  // del modal queden visibles por encima del teclado.
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+      const openModal = document.querySelector('.overlay.open .modal-sheet');
+      if (!openModal) return;
+      const btns = openModal.querySelector('.modal-btns');
+      if (btns) {
+        setTimeout(() => btns.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+      }
+    });
   }
 </script>
 </body>
