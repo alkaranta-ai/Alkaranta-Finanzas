@@ -578,25 +578,31 @@
   }
 
   // ── FIX TECLADO VIRTUAL ──
-  // En iOS/Android, cuando aparece el teclado el viewport se achica pero
-  // los elementos `position:fixed` NO se mueven solos.
-  // Usamos visualViewport para saber cuánto subió el teclado y
-  // desplazamos el modal-sheet hacia arriba con translateY.
   function ajustarModalAlTeclado() {
     const sheet = document.querySelector('.overlay.open .modal-sheet');
     if (!sheet) return;
-
     const vv = window.visualViewport;
     if (!vv) return;
 
-    // offsetTop = distancia desde arriba del layout al área visible
-    // Si el teclado está cerrado, offsetTop ≈ 0 y height ≈ window.innerHeight
-    const tecladoAlto = window.innerHeight - vv.height - vv.offsetTop;
-    const subida = Math.max(0, tecladoAlto);
+    // Altura del teclado = diferencia entre la ventana total y el viewport visible
+    const tecladoAlto = window.innerHeight - vv.height;
 
-    sheet.style.transform = subida > 0
-      ? `translateY(-${subida}px)`
-      : 'translateY(0)';
+    if (tecladoAlto <= 50) {
+      // Teclado cerrado (margen de 50px por barras del sistema)
+      sheet.style.transform = 'translateY(0)';
+      return;
+    }
+
+    // Cuánto ocupa el sheet en pantalla
+    const sheetRect = sheet.getBoundingClientRect();
+    const sheetBottom = sheetRect.bottom;
+    const viewportBottom = vv.offsetTop + vv.height;
+
+    // Solo subir lo que sobresale del área visible, con 12px de margen
+    const sobresale = sheetBottom - viewportBottom + 12;
+    if (sobresale > 0) {
+      sheet.style.transform = `translateY(-${sobresale}px)`;
+    }
   }
 
   function resetearModal() {
