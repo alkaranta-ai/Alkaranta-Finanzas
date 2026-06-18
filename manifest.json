@@ -1,35 +1,23 @@
 {
   "name": "Alkaranta Finanzas",
   "short_name": "Alkaranta",
-  "start_url": "/Alkaranta-Finanzas/",
-  "scope": "/Alkaranta-Finanzas/",
+  "description": "Control inteligente de ingresos y egresos",
+  "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#052e16",
-  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "theme_color": "#3498db",
   "icons": [
     {
       "src": "icono-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icono-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     },
     {
       "src": "icono-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icono-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ]
 }
