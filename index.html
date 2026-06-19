@@ -44,6 +44,9 @@
       --blur: blur(22px) saturate(180%);
 
       --r-sm: 12px; --r-md: 16px; --r-lg: 22px; --r-xl: 28px; --r-pill: 999px;
+
+      /* Altura real de la franja superior, usada para no tapar contenido */
+      --topbar-h: calc(56px + env(safe-area-inset-top));
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -59,6 +62,7 @@
       color: var(--text-1);
       min-height: 100vh;
       padding-bottom: 118px;
+      padding-top: var(--topbar-h);
       font-size: 15px;
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
@@ -90,15 +94,15 @@
       box-shadow: var(--shadow-md);
     }
 
-    /* ── TOP BAR ── */
+    /* ── TOP BAR — fija siempre arriba, no se va al hacer scroll ── */
     .top-bar {
-      position: sticky; top: 0; z-index: 100;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 500;
       background: var(--surface-strong);
       -webkit-backdrop-filter: var(--blur);
       backdrop-filter: var(--blur);
       border-bottom: 1px solid var(--border-soft);
       padding: env(safe-area-inset-top) 20px 0;
-      min-height: calc(56px + env(safe-area-inset-top));
+      min-height: var(--topbar-h);
       display: flex; align-items: flex-end; justify-content: space-between;
       padding-bottom: 10px;
     }
@@ -172,7 +176,7 @@
       text-transform: uppercase;
     }
 
-    /* ── MINI DASHBOARD (reemplaza los gráficos) ── */
+    /* ── MINI DASHBOARD (sin gráficos) ── */
     .dash-grid {
       display: grid; grid-template-columns: 1fr 1fr;
       gap: 10px; margin-bottom: 12px;
@@ -202,13 +206,24 @@
 
     .kpi-card {
       display: flex; flex-direction: column;
+      position: relative;
     }
-    .kpi-icon { font-size: 18px; margin-bottom: 8px; line-height: 1; }
-    .kpi-label { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-3); margin-bottom: 4px; }
+    .kpi-icon { width: 18px; height: 18px; margin-bottom: 8px; color: var(--text-3); }
+    .kpi-icon svg { width: 100%; height: 100%; display: block; }
+    .kpi-label { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-3); margin-bottom: 4px; display: flex; align-items: center; gap: 5px; }
     .kpi-val { font-size: 24px; font-weight: 600; letter-spacing: -0.5px; color: var(--text-1); }
     .kpi-val-sm { font-size: 17px; font-weight: 600; letter-spacing: -0.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .kpi-sub { font-size: 12px; color: var(--text-3); margin-top: 2px; }
     .kpi-neg { color: var(--red); }
+    .kpi-info-btn {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--surface-2); border: 1px solid var(--border-soft);
+      color: var(--text-3); font-size: 10px; font-weight: 700;
+      display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer; line-height: 1; flex-shrink: 0;
+      touch-action: manipulation;
+    }
+    .kpi-info-btn:hover { color: var(--emerald); border-color: var(--emerald); }
 
     /* ── GROUPED LIST ── */
     .list-group {
@@ -374,7 +389,8 @@
 
     /* ── EMPTY STATE ── */
     .empty { text-align: center; padding: 40px 20px; color: var(--text-3); font-size: 14px; }
-    .empty-icon { font-size: 36px; display: block; margin-bottom: 10px; opacity: 0.45; }
+    .empty-icon { width: 36px; height: 36px; display: block; margin: 0 auto 10px; opacity: 0.45; color: var(--text-3); }
+    .empty-icon svg { width: 100%; height: 100%; display: block; }
 
     /* ── MODAL ── */
     .overlay {
@@ -431,7 +447,7 @@
     }
     .nav-btn {
       display: flex; flex-direction: column; align-items: center;
-      gap: 2px; border: none; background: transparent; cursor: pointer;
+      gap: 3px; border: none; background: transparent; cursor: pointer;
       color: var(--text-3); font-size: 10.5px; font-weight: 500;
       font-family: inherit; letter-spacing: 0.01em; padding: 7px 14px;
       border-radius: var(--r-pill); transition: all .2s cubic-bezier(.4,0,.2,1);
@@ -441,7 +457,8 @@
       justify-content: center;
       flex: 1;
     }
-    .nav-btn .ni { font-size: 20px; line-height: 1; transition: transform .2s; }
+    .nav-btn .ni { width: 21px; height: 21px; transition: transform .2s; }
+    .nav-btn .ni svg { width: 100%; height: 100%; display: block; stroke: currentColor; }
     .nav-btn.active {
       color: var(--emerald-dim);
       background: rgba(5,150,105,0.14);
@@ -462,7 +479,7 @@
 </head>
 <body>
 
-<!-- TOP BAR -->
+<!-- TOP BAR (fija) -->
 <div class="top-bar">
   <span class="brand-name">Alkaranta <em>Finanzas</em></span>
   <div class="mode-pill">
@@ -505,23 +522,23 @@
         </div>
       </div>
       <div class="dash-card kpi-card glass">
-        <div class="kpi-icon">💰</div>
-        <div class="kpi-label">Tasa de ahorro</div>
+        <div class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <div class="kpi-label">Tasa de ahorro <span class="kpi-info-btn" onclick="explicarTasaAhorro()">i</span></div>
         <div class="kpi-val" id="kpiTasa">0%</div>
       </div>
       <div class="dash-card kpi-card glass">
-        <div class="kpi-icon">🧾</div>
+        <div class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></div>
         <div class="kpi-label">Movimientos</div>
         <div class="kpi-val" id="kpiMovs">0</div>
       </div>
       <div class="dash-card kpi-card glass">
-        <div class="kpi-icon">🔥</div>
+        <div class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 3 6-8M14 6h4v4"/></svg></div>
         <div class="kpi-label">Mayor gasto</div>
         <div class="kpi-val kpi-val-sm" id="kpiTopCat">—</div>
         <div class="kpi-sub" id="kpiTopCatMonto">$0</div>
       </div>
       <div class="dash-card kpi-card glass">
-        <div class="kpi-icon">📅</div>
+        <div class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M8 14h2M14 14h2M8 17h2M14 17h2"/></svg></div>
         <div class="kpi-label">Promedio diario</div>
         <div class="kpi-val kpi-val-sm" id="kpiPromedio">$0</div>
       </div>
@@ -593,10 +610,22 @@
 
 <!-- BOTTOM NAV -->
 <nav class="bottom-nav">
-  <button class="nav-btn active" onclick="cambiarTab('inicio',this)"><span class="ni">📊</span>Inicio</button>
-  <button class="nav-btn" onclick="cambiarTab('movimientos',this)"><span class="ni">💸</span>Movimientos</button>
-  <button class="nav-btn" onclick="cambiarTab('presupuesto',this)"><span class="ni">🎯</span>Presupuesto</button>
-  <button class="nav-btn" onclick="cambiarTab('metas',this)"><span class="ni">⭐</span>Metas</button>
+  <button class="nav-btn active" onclick="cambiarTab('inicio',this)">
+    <span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>
+    Inicio
+  </button>
+  <button class="nav-btn" onclick="cambiarTab('movimientos',this)">
+    <span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 9V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h2"/><rect x="7" y="9" width="15" height="11" rx="2"/><circle cx="16" cy="14.5" r="1.6"/></svg></span>
+    Movimientos
+  </button>
+  <button class="nav-btn" onclick="cambiarTab('presupuesto',this)">
+    <span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor" stroke="none"/></svg></span>
+    Presupuesto
+  </button>
+  <button class="nav-btn" onclick="cambiarTab('metas',this)">
+    <span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L12 16.9 6.4 20l1.4-6.2-4.8-4.3 6.4-.6L12 3z"/></svg></span>
+    Metas
+  </button>
 </nav>
 
 <!-- MODAL PRESUPUESTO -->
