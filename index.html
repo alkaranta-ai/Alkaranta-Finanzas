@@ -1,3 +1,6 @@
+Ahí va solo el `index.html`:
+
+```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -23,8 +26,6 @@
       --red:          #F43F5E;
       --amber:        #F59E0B;
       --blue:         #3B82F6;
-
-      /* Modo claro fijo — no depende del sistema */
       --bg:            #EEF1F0;
       --surface:       rgba(255,255,255,0.58);
       --surface-strong:rgba(255,255,255,0.78);
@@ -36,16 +37,11 @@
       --text-1:        #1D1D1F;
       --text-2:        #66666B;
       --text-3:        #9C9CA3;
-
       --shadow-sm: 0 1px 2px rgba(20,20,25,0.04), 0 6px 18px rgba(20,20,25,0.06);
       --shadow-md: 0 10px 30px rgba(20,20,25,0.10), inset 0 1px 1px rgba(255,255,255,0.7);
       --shadow-nav: 0 14px 34px rgba(20,20,25,0.16), inset 0 1px 1px rgba(255,255,255,0.85);
-
       --blur: blur(22px) saturate(180%);
-
       --r-sm: 12px; --r-md: 16px; --r-lg: 22px; --r-xl: 28px; --r-pill: 999px;
-
-      /* Altura real de la franja superior, usada para no tapar contenido */
       --topbar-h: calc(56px + env(safe-area-inset-top));
     }
 
@@ -70,7 +66,6 @@
       position: relative;
     }
 
-    /* ── FONDO CON MANCHAS DE COLOR (lo que el vidrio "refracta") ── */
     body::before {
       content: '';
       position: fixed;
@@ -85,7 +80,6 @@
       background-attachment: fixed;
     }
 
-    /* ── GLASS BASE ── */
     .glass {
       background: var(--surface);
       -webkit-backdrop-filter: var(--blur);
@@ -94,7 +88,6 @@
       box-shadow: var(--shadow-md);
     }
 
-    /* ── TOP BAR — fija siempre arriba, no se va al hacer scroll ── */
     .top-bar {
       position: fixed; top: 0; left: 0; right: 0; z-index: 500;
       background: var(--surface-strong);
@@ -130,10 +123,8 @@
       box-shadow: 0 2px 6px rgba(20,20,25,0.14), inset 0 1px 0 rgba(255,255,255,0.9);
     }
 
-    /* ── PAGE ── */
     .page { max-width: 640px; margin: 0 auto; padding: 0 16px; }
 
-    /* ── HERO CARD ── */
     .hero {
       margin: 20px 0 12px;
       background: linear-gradient(155deg, #06A87A 0%, var(--emerald-dim) 100%);
@@ -169,14 +160,12 @@
     .hero-stat-label { font-size: 11px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.7; margin-bottom: 3px; }
     .hero-stat-val { font-size: 20px; font-weight: 500; letter-spacing: -0.5px; }
 
-    /* ── SECTION LABEL ── */
     .sec-label {
       font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
       color: var(--text-2); margin: 24px 0 10px;
       text-transform: uppercase;
     }
 
-    /* ── MINI DASHBOARD (sin gráficos) ── */
     .dash-grid {
       display: grid; grid-template-columns: 1fr 1fr;
       gap: 10px; margin-bottom: 12px;
@@ -204,10 +193,7 @@
     .dot-ing { background: var(--emerald); }
     .dot-egr { background: var(--red); }
 
-    .kpi-card {
-      display: flex; flex-direction: column;
-      position: relative;
-    }
+    .kpi-card { display: flex; flex-direction: column; position: relative; }
     .kpi-icon { width: 18px; height: 18px; margin-bottom: 8px; color: var(--text-3); }
     .kpi-icon svg { width: 100%; height: 100%; display: block; }
     .kpi-label { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-3); margin-bottom: 4px; display: flex; align-items: center; gap: 5px; }
@@ -225,7 +211,6 @@
     }
     .kpi-info-btn:hover { color: var(--emerald); border-color: var(--emerald); }
 
-    /* ── GROUPED LIST ── */
     .list-group {
       border-radius: var(--r-lg);
       overflow: hidden;
@@ -260,7 +245,6 @@
     }
     .btn-row-action:hover { color: var(--emerald); border-color: var(--emerald); }
 
-    /* ── FORM ── */
     .form-card {
       border-radius: var(--r-lg);
       overflow: hidden; margin-bottom: 12px;
@@ -319,7 +303,6 @@
     }
     .btn-ghost:hover { color: var(--emerald); border-color: var(--emerald); }
 
-    /* ── FILTROS ── */
     .filter-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
     .filter-row select {
       flex: 1; min-width: 120px; padding: 9px 12px;
@@ -328,14 +311,12 @@
       font-size: 13px; font-family: inherit; appearance: none; -webkit-appearance: none;
     }
 
-    /* ── PROGRESS ── */
     .prog-bar { height: 4px; background: var(--surface-2); border-radius: 999px; overflow: hidden; margin: 8px 0 0; }
     .prog-fill { height: 100%; border-radius: 999px; transition: width .5s cubic-bezier(.4,0,.2,1); }
     .ok   { background: var(--emerald); }
     .warn { background: var(--amber); }
     .over { background: var(--red); }
 
-    /* ── PRESUPUESTO ROWS ── */
     .budget-row { padding: 14px 16px; border-bottom: 1px solid var(--border-soft); }
     .budget-row:last-child { border-bottom: none; }
     .budget-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
@@ -343,7 +324,6 @@
     .budget-nums { font-size: 13px; color: var(--text-3); }
     .budget-nums b { color: var(--text-2); font-weight: 500; }
 
-    /* ── METAS ── */
     .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
     .meta-card {
       border-radius: var(--r-lg);
@@ -387,12 +367,9 @@
     }
     .btn-add-budget:hover { border-color: var(--emerald); color: var(--emerald); }
 
-    /* ── EMPTY STATE ── */
     .empty { text-align: center; padding: 40px 20px; color: var(--text-3); font-size: 14px; }
-    .empty-icon { width: 36px; height: 36px; display: block; margin: 0 auto 10px; opacity: 0.45; color: var(--text-3); }
-    .empty-icon svg { width: 100%; height: 100%; display: block; }
+    .empty-icon { font-size: 28px; display: block; margin: 0 auto 10px; opacity: 0.45; }
 
-    /* ── MODAL ── */
     .overlay {
       display: none; position: fixed; inset: 0;
       background: rgba(20,20,25,0.35); z-index: 200;
@@ -427,7 +404,6 @@
     .modal-btns .btn-primary { flex: 2; width: auto; }
     .modal-btns .btn-secondary { flex: 1; width: auto; display: block; }
 
-    /* ── BOTTOM NAV — cápsula flotante "liquid glass" ── */
     .bottom-nav {
       position: fixed;
       left: 16px; right: 16px;
@@ -448,12 +424,12 @@
     .nav-btn {
       display: flex; flex-direction: column; align-items: center;
       gap: 3px; border: none; background: transparent; cursor: pointer;
-      color: var(--text-3); font-size: 10.5px; font-weight: 500;
-      font-family: inherit; letter-spacing: 0.01em; padding: 7px 14px;
+      color: var(--text-3); font-size: 10px; font-weight: 500;
+      font-family: inherit; letter-spacing: 0.01em; padding: 7px 10px;
       border-radius: var(--r-pill); transition: all .2s cubic-bezier(.4,0,.2,1);
       touch-action: manipulation;
       -webkit-user-select: none; user-select: none;
-      min-width: 56px; min-height: 48px;
+      min-width: 48px; min-height: 48px;
       justify-content: center;
       flex: 1;
     }
@@ -466,20 +442,44 @@
     }
     .nav-btn.active .ni { transform: translateY(-1px) scale(1.06); }
 
-    /* ── TABS ── */
     .tab { display: none; }
     .tab.active { display: block; }
+
+    /* LOGROS */
+    .logro-progress { margin-bottom: 16px; }
+    .logro-progress-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+    .logro-progress-num { font-size: 28px; font-weight: 300; letter-spacing: -0.5px; color: var(--emerald); }
+    .logro-progress-label { font-size: 12px; color: var(--text-3); }
+    .logro-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .logro-card {
+      border-radius: var(--r-lg);
+      padding: 16px;
+      position: relative;
+      transition: all .3s ease;
+    }
+    .logro-card.locked { opacity: 0.4; filter: grayscale(0.8); }
+    .logro-card:not(.locked):hover { transform: translateY(-2px); border-color: rgba(5,150,105,0.4); }
+    .logro-emoji { font-size: 28px; display: block; margin-bottom: 10px; }
+    .logro-name { font-size: 14px; font-weight: 600; color: var(--text-1); margin-bottom: 2px; }
+    .logro-desc { font-size: 12px; color: var(--text-3); line-height: 1.4; }
+    .logro-check {
+      position: absolute; top: 12px; right: 12px;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--emerald); color: #fff;
+      font-size: 12px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
 
     @media (max-width: 400px) {
       .meta-grid { grid-template-columns: 1fr; }
       .form-grid { grid-template-columns: 1fr; }
       .hero-amount { font-size: 36px; }
+      .logro-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
 
-<!-- TOP BAR (fija) -->
 <div class="top-bar">
   <span class="brand-name">Alkaranta <em>Finanzas</em></span>
   <div class="mode-pill">
@@ -490,7 +490,6 @@
 
 <div class="page">
 
-  <!-- ── INICIO ── -->
   <div class="tab active" id="sec-inicio">
     <div class="hero">
       <div class="hero-label">Saldo total</div>
@@ -507,7 +506,6 @@
         </div>
       </div>
     </div>
-
     <div class="sec-label">Resumen</div>
     <div class="dash-grid">
       <div class="dash-card wide glass">
@@ -543,13 +541,11 @@
         <div class="kpi-val kpi-val-sm" id="kpiPromedio">$0</div>
       </div>
     </div>
-
     <div class="sec-label">Por categoría</div>
     <div class="list-group glass" id="listaCategorias"></div>
     <div style="height:8px"></div>
   </div>
 
-  <!-- ── MOVIMIENTOS ── -->
   <div class="tab" id="sec-movimientos">
     <div class="sec-label" style="margin-top:20px">Nuevo movimiento</div>
     <div class="form-card glass">
@@ -578,7 +574,6 @@
         </div>
       </div>
     </div>
-
     <div class="sec-label">Historial</div>
     <div class="filter-row">
       <select id="filtroMes" onchange="renderizar()"><option value="">Todos los meses</option></select>
@@ -589,7 +584,6 @@
     <div style="height:8px"></div>
   </div>
 
-  <!-- ── PRESUPUESTO ── -->
   <div class="tab" id="sec-presupuesto">
     <div class="sec-label" style="margin-top:20px">Presupuesto mensual</div>
     <p style="font-size:13px;color:var(--text-3);margin-bottom:14px">Seguí tus límites de gasto por categoría.</p>
@@ -598,7 +592,6 @@
     <div style="height:8px"></div>
   </div>
 
-  <!-- ── METAS ── -->
   <div class="tab" id="sec-metas">
     <div class="sec-label" style="margin-top:20px">Metas de ahorro</div>
     <p style="font-size:13px;color:var(--text-3);margin-bottom:14px">Seguí tus objetivos y sumá progreso cuando quieras.</p>
@@ -606,9 +599,24 @@
     <div style="height:8px"></div>
   </div>
 
+  <div class="tab" id="sec-logros">
+    <div class="sec-label" style="margin-top:20px">Logros desbloqueados</div>
+    <p style="font-size:13px;color:var(--text-3);margin-bottom:14px">Usá la app y desbloqueá logros a medida que avanzás.</p>
+    <div class="logro-progress glass" style="border-radius:var(--r-lg);padding:16px">
+      <div class="logro-progress-head">
+        <div>
+          <div class="logro-progress-num" id="logrosCount">0 / 15</div>
+          <div class="logro-progress-label">Completados</div>
+        </div>
+      </div>
+      <div class="prog-bar" style="height:6px"><div class="prog-fill ok" id="logrosBar" style="width:0%"></div></div>
+    </div>
+    <div class="logro-grid" id="logrosGrid"></div>
+    <div style="height:8px"></div>
+  </div>
+
 </div>
 
-<!-- BOTTOM NAV -->
 <nav class="bottom-nav">
   <button class="nav-btn active" onclick="cambiarTab('inicio',this)">
     <span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>
@@ -626,9 +634,12 @@
     <span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L12 16.9 6.4 20l1.4-6.2-4.8-4.3 6.4-.6L12 3z"/></svg></span>
     Metas
   </button>
+  <button class="nav-btn" onclick="cambiarTab('logros',this)">
+    <span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg></span>
+    Logros
+  </button>
 </nav>
 
-<!-- MODAL PRESUPUESTO -->
 <div class="overlay" id="modalPresupuesto">
   <div class="modal-sheet">
     <div class="modal-title">Agregar presupuesto</div>
@@ -641,7 +652,6 @@
   </div>
 </div>
 
-<!-- MODAL META NUEVA -->
 <div class="overlay" id="modalMeta">
   <div class="modal-sheet">
     <div class="modal-title">Nueva meta</div>
@@ -668,7 +678,6 @@
   </div>
 </div>
 
-<!-- MODAL AGREGAR AHORRO -->
 <div class="overlay" id="modalAhorro">
   <div class="modal-sheet">
     <div class="modal-title" id="modalAhorroTitulo">Agregar ahorro</div>
@@ -686,39 +695,29 @@
 <script src="app.js"></script>
 <script>
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('./sw.js').catch(function() {});
     });
   }
-
-  // ── FIX TECLADO VIRTUAL (iOS + Android) ──
   function ajustarModalAlTeclado() {
-    const overlay = document.querySelector('.overlay.open');
+    var overlay = document.querySelector('.overlay.open');
     if (!overlay) return;
-    const vv = window.visualViewport;
+    var vv = window.visualViewport;
     if (!vv) return;
-    overlay.style.top    = vv.offsetTop + 'px';
+    overlay.style.top = vv.offsetTop + 'px';
     overlay.style.height = vv.height + 'px';
   }
-
   function resetearModal() {
-    document.querySelectorAll('.overlay').forEach(o => {
-      o.style.top    = '';
-      o.style.height = '';
-    });
+    document.querySelectorAll('.overlay').forEach(function(o) { o.style.top = ''; o.style.height = ''; });
   }
-
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', ajustarModalAlTeclado);
     window.visualViewport.addEventListener('scroll', ajustarModalAlTeclado);
   }
-
-  document.addEventListener('click', e => {
-    if (e.target.classList.contains('overlay')) {
-      resetearModal();
-      cerrarModales();
-    }
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('overlay')) { resetearModal(); cerrarModales(); }
   });
 </script>
 </body>
 </html>
+```
