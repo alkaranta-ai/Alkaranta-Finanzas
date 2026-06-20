@@ -37,6 +37,45 @@ function mostrarToastLogro(logro) {
   }, 3800);
 }
 
+/* ── FORZAR ACTUALIZACIÓN ──
+   Botón de emergencia: desregistra el Service Worker y borra todas
+   las cachés (caches.delete), SIN tocar localStorage. Así los
+   movimientos, metas, presupuestos y el progreso de gamificación
+   quedan intactos, pero el próximo fetch va a traer todo de nuevo
+   desde el servidor en vez de usar archivos viejos cacheados.
+   Pensado especialmente para iOS/Safari, donde "reinstalar" el
+   ícono de pantalla de inicio NO borra el Service Worker. */
+async function forzarActualizacionApp() {
+  const btn = document.getElementById("btnForzarUpdate");
+  if (btn) { btn.disabled = true; btn.textContent = "Actualizando…"; }
+  try {
+    if ('serviceWorker' in navigator) {
+      const registros = await navigator.serviceWorker.getRegistrations();
+      for (const reg of registros) {
+        await reg.unregister();
+      }
+    }
+    if ('caches' in window) {
+      const nombres = await caches.keys();
+      for (const nombre of nombres) {
+        await caches.delete(nombre);
+      }
+    }
+    if (btn) btn.textContent = "¡Listo! Recargando…";
+    setTimeout(() => {
+      // Recarga forzando bypass de caché del navegador.
+      location.reload(true);
+    }, 400);
+  } catch (e) {
+    console.error("[gam] Error al forzar actualización:", e);
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "Forzar actualización";
+    }
+    alert("No se pudo actualizar automáticamente. Probá cerrar la app del todo (deslizar hacia arriba para cerrarla) y volver a abrirla.");
+  }
+}
+
 /* ── RENDER PESTAÑA LOGROS ──
    Solo lee el estado ya calculado (vía __ultimoStatsGam o gam.getEstadoCompleto).
    No vuelve a llamar gam.recalcular() para no procesar logros dos veces. */
@@ -104,6 +143,24 @@ function renderLogros() {
       <div class="logro-xp">${desbloqueado ? "+" + l.xp + " XP" : l.xp + " XP"}</div>`;
     grid.appendChild(card);
   });
+
+  // Botón de emergencia para forzar actualización de la app
+  // (borra Service Worker + cachés, no toca tus datos guardados).
+  let updateBox = cont.querySelector("#updateBox");
+  if (!updateBox) {
+    updateBox = document.createElement("div");
+    updateBox.id = "updateBox";
+    updateBox.style.marginTop = "20px";
+    updateBox.style.textAlign = "center";
+    updateBox.innerHTML = `
+      <button id="btnForzarUpdate" class="btn-ghost" style="width:100%;padding:12px;" onclick="forzarActualizacionApp()">
+        Forzar actualización
+      </button>
+      <div style="font-size:11px;color:var(--text-3);margin-top:6px;">
+        Tocá esto si la app no muestra cambios recientes. No borra tus datos.
+      </div>`;
+    cont.appendChild(updateBox);
+  }
 }
 
 /* ── HOOK: se llama después de que app.js inicializa todo ── */
