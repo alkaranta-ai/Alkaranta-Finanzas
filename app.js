@@ -117,6 +117,7 @@ function eliminarMovimiento(i) {
   }
   movimientos.splice(i, 1);
   guardarLS(); poblarFiltroMeses(); renderizar(); renderPresupuesto();
+  checkLogros();
 }
 
 function guardarLS() {
@@ -323,6 +324,7 @@ function eliminarPresupuesto(key) {
   if (!confirm("¿Eliminar el presupuesto de \"" + cat + "\"?")) return;
   delete presupuestos[key];
   guardarLS(); renderPresupuesto();
+  checkLogros();
 }
 
 function renderPresupuesto() {
@@ -413,6 +415,7 @@ function eliminarMeta(idx) {
   if (!confirm("¿Eliminar esta meta?")) return;
   metas.splice(idx, 1);
   guardarLS(); renderMetas();
+  checkLogros();
 }
 
 function renderMetas() {
@@ -481,7 +484,6 @@ function resetearFecha() {
   document.getElementById("fecha").value = new Date().toISOString().split("T")[0];
 }
 
-// ═══════ LOGROS ═══════
 var LOGROS_DEF = [
   { id: 'primer_mov',    emoji: '🎬', nombre: 'Primer paso',       desc: 'Registra tu primer movimiento' },
   { id: 'primer_ing',    emoji: '💰', nombre: 'Primer ingreso',    desc: 'Registra tu primer ingreso' },
@@ -501,28 +503,23 @@ var LOGROS_DEF = [
 ];
 
 function checkLogros() {
-  var desbloqueados = JSON.parse(localStorage.getItem("logros_desbloqueados")) || [];
-  var nuevo = false;
-  function desbloquear(id) {
-    if (desbloqueados.indexOf(id) === -1) { desbloqueados.push(id); nuevo = true; }
-  }
-
   var delModo = movimientos.filter(pertenece);
+  var ahora = [];
 
-  if (delModo.length >= 1) desbloquear('primer_mov');
-  if (delModo.some(function(m) { return m.tipo === 'Ingreso'; })) desbloquear('primer_ing');
-  if (delModo.some(function(m) { return m.tipo === 'Egreso'; })) desbloquear('primer_egr');
-  if (delModo.length >= 10) desbloquear('mov_10');
-  if (delModo.length >= 50) desbloquear('mov_50');
-  if (delModo.length >= 100) desbloquear('mov_100');
+  if (delModo.length >= 1) ahora.push('primer_mov');
+  if (delModo.some(function(m) { return m.tipo === 'Ingreso'; })) ahora.push('primer_ing');
+  if (delModo.some(function(m) { return m.tipo === 'Egreso'; })) ahora.push('primer_egr');
+  if (delModo.length >= 10) ahora.push('mov_10');
+  if (delModo.length >= 50) ahora.push('mov_50');
+  if (delModo.length >= 100) ahora.push('mov_100');
 
   var totalPres = Object.keys(presupuestos).filter(function(k) { return k.startsWith(modoActual + "_"); }).length;
-  if (totalPres >= 1) desbloquear('primer_pres');
-  if (totalPres >= 3) desbloquear('pres_3');
+  if (totalPres >= 1) ahora.push('primer_pres');
+  if (totalPres >= 3) ahora.push('pres_3');
 
   var delMetas = metas.filter(function(m) { return (m.entidad || 'personal') === modoActual; });
-  if (delMetas.length >= 1) desbloquear('primer_meta');
-  if (delMetas.some(function(m) { return m.ahorrado >= m.objetivo; })) desbloquear('meta_cumplida');
+  if (delMetas.length >= 1) ahora.push('primer_meta');
+  if (delMetas.some(function(m) { return m.ahorrado >= m.objetivo; })) ahora.push('meta_cumplida');
 
   var mesesSet = {};
   delModo.forEach(function(m) { if (m.fecha && m.fecha.length >= 7) mesesSet[m.fecha.slice(0, 7)] = true; });
@@ -532,21 +529,20 @@ function checkLogros() {
     var egr = delMes.filter(function(m) { return m.tipo === 'Egreso'; }).reduce(function(s, m) { return s + m.monto; }, 0);
     if (ing > 0) {
       var tasa = ((ing - egr) / ing) * 100;
-      if (tasa >= 30) desbloquear('ahorro_30');
-      if (tasa >= 50) desbloquear('ahorro_50');
+      if (tasa >= 30) ahora.push('ahorro_30');
+      if (tasa >= 50) ahora.push('ahorro_50');
     }
   });
 
-  if (Object.keys(mesesSet).length >= 3) desbloquear('meses_3');
+  if (Object.keys(mesesSet).length >= 3) ahora.push('meses_3');
 
   var catsEgr = {};
   delModo.filter(function(m) { return m.tipo === 'Egreso'; }).forEach(function(m) { catsEgr[m.categoria] = true; });
-  if (Object.keys(catsEgr).length >= 5) desbloquear('cats_5');
+  if (Object.keys(catsEgr).length >= 5) ahora.push('cats_5');
 
-  if (nuevo) {
-    localStorage.setItem("logros_desbloqueados", JSON.stringify(desbloqueados));
-  }
-  return nuevo;
+  var antes = JSON.parse(localStorage.getItem("logros_desbloqueados")) || [];
+  localStorage.setItem("logros_desbloqueados", JSON.stringify(ahora));
+  return JSON.stringify(antes) !== JSON.stringify(ahora);
 }
 
 function renderLogros() {
