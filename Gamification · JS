@@ -1,0 +1,300 @@
+/* ════════════════════════════════════════════════════════════
+   ALKARANTA · GAMIFICACIÓN
+   Sistema de XP, niveles, rachas y logros.
+   Se engancha a app.js mediante hooks (gam.onMovimientoGuardado, etc.)
+   sin modificar la lógica financiera existente.
+════════════════════════════════════════════════════════════ */
+
+const gam = (() => {
+
+  /* ── CONFIG: curva de nivel ──
+     XP necesaria para pasar del nivel N al N+1.
+     Curva suave al principio, más exigente después. */
+  function xpParaNivel(nivel) {
+    return Math.round(80 * Math.pow(nivel, 1.55));
+  }
+
+  /* ── CATÁLOGO DE LOGROS ──
+     check(stats) → boolean. stats se recalcula en cada render.
+     xp → recompensa al desbloquearse (una sola vez). */
+  const LOGROS = [
+    {
+      id: "primer_paso",
+      nombre: "Primer paso",
+      desc: "Cargaste tu primer movimiento.",
+      icono: "🌱",
+      xp: 30,
+      check: s => s.totalMovimientos >= 1
+    },
+    {
+      id: "diez_movs",
+      nombre: "En marcha",
+      desc: "Cargaste 10 movimientos.",
+      icono: "📋",
+      xp: 50,
+      check: s => s.totalMovimientos >= 10
+    },
+    {
+      id: "cincuenta_movs",
+      nombre: "Constructor de hábito",
+      desc: "Cargaste 50 movimientos.",
+      icono: "🏗️",
+      xp: 120,
+      check: s => s.totalMovimientos >= 50
+    },
+    {
+      id: "cien_movs",
+      nombre: "Veterano del registro",
+      desc: "Cargaste 100 movimientos.",
+      icono: "📚",
+      xp: 200,
+      check: s => s.totalMovimientos >= 100
+    },
+    {
+      id: "racha_3",
+      nombre: "Tres seguidos",
+      desc: "3 días consecutivos cargando movimientos.",
+      icono: "🔥",
+      xp: 40,
+      check: s => s.rachaMax >= 3
+    },
+    {
+      id: "racha_7",
+      nombre: "Semana completa",
+      desc: "7 días consecutivos cargando movimientos.",
+      icono: "🔥",
+      xp: 100,
+      check: s => s.rachaMax >= 7
+    },
+    {
+      id: "racha_30",
+      nombre: "Mes de hierro",
+      desc: "30 días consecutivos cargando movimientos.",
+      icono: "⚡",
+      xp: 350,
+      check: s => s.rachaMax >= 30
+    },
+    {
+      id: "primera_meta",
+      nombre: "Meta cumplida",
+      desc: "Completaste tu primera meta de ahorro.",
+      icono: "🏆",
+      xp: 150,
+      check: s => s.metasCompletadas >= 1
+    },
+    {
+      id: "tres_metas",
+      nombre: "Coleccionista de metas",
+      desc: "Completaste 3 metas de ahorro.",
+      icono: "🎖️",
+      xp: 300,
+      check: s => s.metasCompletadas >= 3
+    },
+    {
+      id: "presupuesto_sano",
+      nombre: "Mes bajo control",
+      desc: "Cerraste un mes sin pasarte de ningún presupuesto.",
+      icono: "🛡️",
+      xp: 120,
+      check: s => s.mesesPresupuestoOk >= 1
+    },
+    {
+      id: "ahorro_20",
+      nombre: "Ahorrador consciente",
+      desc: "Alcanzaste 20% o más de tasa de ahorro en un mes.",
+      icono: "💚",
+      xp: 100,
+      check: s => s.mejorTasaAhorro >= 20
+    },
+    {
+      id: "ahorro_40",
+      nombre: "Disciplina financiera",
+      desc: "Alcanzaste 40% o más de tasa de ahorro en un mes.",
+      icono: "💎",
+      xp: 220,
+      check: s => s.mejorTasaAhorro >= 40
+    },
+    {
+      id: "primer_presupuesto",
+      nombre: "Con plan",
+      desc: "Creaste tu primer presupuesto.",
+      icono: "🗂️",
+      xp: 30,
+      check: s => s.totalPresupuestos >= 1
+    },
+    {
+      id: "primera_meta_creada",
+      nombre: "Soñador con fecha",
+      desc: "Creaste tu primera meta de ahorro.",
+      icono: "⭐",
+      xp: 30,
+      check: s => s.totalMetasCreadas >= 1
+    }
+  ];
+
+  function estadoDefault() {
+    return {
+      xp: 0,
+      logrosDesbloqueados: [],   // ids
+      fechasConMovimiento: [],   // "YYYY-MM-DD" únicas
+      mesesPresupuestoOkRegistrados: [], // "YYYY-MM" ya contados
+      mejorTasaAhorroHistorica: 0
+    };
+  }
+
+  function cargar() {
+    try {
+      const raw = localStorage.getItem("gamificacion");
+      if (!raw) return estadoDefault();
+      const data = JSON.parse(raw);
+      return { ...estadoDefault(), ...data };
+    } catch (e) {
+      return estadoDefault();
+    }
+  }
+
+  let estado = cargar();
+
+  function guardar() {
+    try {
+      localStorage.setItem("gamificacion", JSON.stringify(estado));
+    } catch (e) { /* storage lleno o bloqueado: fallamos en silencio */ }
+  }
+
+  /* ── NIVEL a partir de XP total ── */
+  function calcularNivel(xpTotal) {
+    let nivel = 1;
+    let restante = xpTotal;
+    while (restante >= xpParaNivel(nivel)) {
+      restante -= xpParaNivel(nivel);
+      nivel++;
+    }
+    return {
+      nivel,
+      xpEnNivel: restante,
+      xpNecesaria: xpParaNivel(nivel),
+      pct: Math.min(100, Math.round((restante / xpParaNivel(nivel)) * 100))
+    };
+  }
+
+  /* ── RACHA: días consecutivos con al menos un movimiento cargado ── */
+  function calcularRachas(fechas) {
+    const set = new Set(fechas);
+    const dias = [...set].sort();
+    if (dias.length === 0) return { actual: 0, max: 0 };
+
+    let max = 1, run = 1;
+    for (let i = 1; i < dias.length; i++) {
+      const prev = new Date(dias[i - 1] + "T00:00:00");
+      const cur  = new Date(dias[i] + "T00:00:00");
+      const diff = Math.round((cur - prev) / 86400000);
+      if (diff === 1) { run++; max = Math.max(max, run); }
+      else if (diff > 1) { run = 1; }
+    }
+
+    // Racha ACTUAL: cuenta hacia atrás desde hoy o ayer (si hoy no cargó nada todavía)
+    const fmt = d => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    };
+    const hoy = new Date(); hoy.setHours(0,0,0,0);
+    let actual = 0;
+    let cursor = new Date(hoy);
+    if (!set.has(fmt(hoy))) cursor.setDate(cursor.getDate() - 1); // permite no haber cargado *hoy* todavía
+    while (set.has(fmt(cursor))) {
+      actual++;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+
+    return { actual, max };
+  }
+
+  /* ── Recalcula stats a partir de los datos reales de la app
+     y devuelve también los logros recién desbloqueados (para mostrar toast) ── */
+  function recalcular({ movimientos, metas, presupuestos }) {
+    const fechasUnicas = [...new Set(
+      movimientos.map(m => m.fecha).filter(Boolean)
+    )];
+    estado.fechasConMovimiento = fechasUnicas;
+
+    const rachas = calcularRachas(fechasUnicas);
+
+    const metasCompletadas = metas.filter(m => m.ahorrado >= m.objetivo).length;
+
+    // Mejor tasa de ahorro histórica, mes a mes
+    const porMes = {};
+    movimientos.forEach(m => {
+      if (!m.fecha) return;
+      const mes = m.fecha.slice(0,7);
+      porMes[mes] = porMes[mes] || { ing: 0, egr: 0 };
+      if (m.tipo === "Ingreso") porMes[mes].ing += m.monto;
+      else porMes[mes].egr += m.monto;
+    });
+    let mejorTasa = 0;
+    Object.values(porMes).forEach(({ing, egr}) => {
+      if (ing > 0) {
+        const tasa = Math.round(((ing - egr) / ing) * 100);
+        if (tasa > mejorTasa) mejorTasa = tasa;
+      }
+    });
+    estado.mejorTasaAhorroHistorica = Math.max(estado.mejorTasaAhorroHistorica, mejorTasa);
+
+    // Meses donde NINGÚN presupuesto se pasó del límite (evalúa el mes actual en cada recálculo)
+    const hoyLocal = new Date();
+    const mesActual = `${hoyLocal.getFullYear()}-${String(hoyLocal.getMonth()+1).padStart(2,"0")}`;
+    let mesesOk = estado.mesesPresupuestoOkRegistrados.length;
+    const keys = Object.keys(presupuestos);
+    if (keys.length > 0) {
+      const todosOk = keys.every(key => {
+        const cat = key.split("_").slice(1).join("_");
+        const limite = presupuestos[key];
+        const entidad = key.split("_")[0];
+        const gastado = movimientos
+          .filter(m => (m.entidad||'personal') === entidad && m.tipo === "Egreso" && m.categoria === cat && m.fecha && m.fecha.startsWith(mesActual))
+          .reduce((s,m) => s+m.monto, 0);
+        return gastado <= limite;
+      });
+      if (todosOk && !estado.mesesPresupuestoOkRegistrados.includes(mesActual)) {
+        estado.mesesPresupuestoOkRegistrados.push(mesActual);
+      }
+    }
+    mesesOk = estado.mesesPresupuestoOkRegistrados.length;
+
+    const stats = {
+      totalMovimientos: movimientos.length,
+      rachaActual: rachas.actual,
+      rachaMax: rachas.max,
+      metasCompletadas,
+      totalMetasCreadas: metas.length,
+      totalPresupuestos: keys.length,
+      mesesPresupuestoOk: mesesOk,
+      mejorTasaAhorro: estado.mejorTasaAhorroHistorica
+    };
+
+    const nuevosLogros = [];
+    LOGROS.forEach(logro => {
+      if (!estado.logrosDesbloqueados.includes(logro.id) && logro.check(stats)) {
+        estado.logrosDesbloqueados.push(logro.id);
+        estado.xp += logro.xp;
+        nuevosLogros.push(logro);
+      }
+    });
+
+    guardar();
+
+    return { stats, nuevosLogros, nivel: calcularNivel(estado.xp) };
+  }
+
+  function getEstadoCompleto() {
+    return {
+      xp: estado.xp,
+      nivel: calcularNivel(estado.xp),
+      logrosDesbloqueados: estado.logrosDesbloqueados,
+      catalogoLogros: LOGROS
+    };
+  }
+
+  return { recalcular, getEstadoCompleto, LOGROS };
+})();
