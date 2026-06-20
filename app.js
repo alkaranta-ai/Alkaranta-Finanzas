@@ -10,7 +10,6 @@ let modoActual   = 'personal';
 let editandoIdx  = null;
 let metaAhorroIdx = null;
 
-// ── INIT ──
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("fecha").value = new Date().toISOString().split("T")[0];
   actualizarCategorias();
@@ -18,28 +17,27 @@ document.addEventListener("DOMContentLoaded", () => {
   renderizar();
   renderPresupuesto();
   renderMetas();
-
   document.querySelectorAll(".overlay").forEach(m => {
     m.addEventListener("click", e => { if (e.target === m) cerrarModales(); });
   });
 });
 
-// ── TABS ──
 function cambiarTab(tab, btn) {
   document.querySelectorAll('.tab').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('sec-' + tab).classList.add('active');
   btn.classList.add('active');
-  if (tab === 'inicio') renderizar();
-  if (tab === 'presupuesto') renderPresupuesto();
-  if (tab === 'metas') renderMetas();
+  if (tab === 'inicio')        { renderizar(); }
+  if (tab === 'movimientos')   { poblarFiltroMeses(); renderizar(); }
+  if (tab === 'presupuesto')   { renderPresupuesto(); }
+  if (tab === 'metas')         { renderMetas(); }
 }
 
-// ── MODO ──
 function cambiarModo(modo) {
   modoActual = modo;
   document.getElementById('btnPersonal').classList.toggle('active', modo === 'personal');
   document.getElementById('btnLaboral').classList.toggle('active', modo === 'laboral');
+  cancelarEdicion();
   poblarFiltroMeses();
   renderizar();
   renderPresupuesto();
@@ -48,7 +46,6 @@ function cambiarModo(modo) {
 
 function pertenece(m) { return (m.entidad || 'personal') === modoActual; }
 
-// ── CATEGORÍAS ──
 function actualizarCategorias() {
   const tipo = document.getElementById("tipo").value;
   const sel  = document.getElementById("categoria");
@@ -60,7 +57,6 @@ function actualizarCategorias() {
   });
 }
 
-// ── MOVIMIENTOS ──
 function guardarMovimiento() {
   const fecha       = document.getElementById("fecha").value;
   const tipo        = document.getElementById("tipo").value;
@@ -78,7 +74,7 @@ function guardarMovimiento() {
   } else {
     movimientos.push(mov);
   }
-  guardarLS(); limpiar(); poblarFiltroMeses(); renderizar();
+  guardarLS(); limpiar(); poblarFiltroMeses(); renderizar(); renderPresupuesto();
 }
 
 function limpiar() {
@@ -95,13 +91,14 @@ function cancelarEdicion() {
 
 function editarMovimiento(i) {
   const m = movimientos[i];
+  if (!m) return;
   editandoIdx = i;
   document.getElementById("fecha").value       = m.fecha;
   document.getElementById("tipo").value        = m.tipo;
   actualizarCategorias();
   document.getElementById("categoria").value   = m.categoria;
   document.getElementById("monto").value       = m.monto;
-  document.getElementById("descripcion").value = m.descripcion;
+  document.getElementById("descripcion").value = m.descripcion || "";
   document.getElementById("btnGuardar").textContent = "Actualizar";
   document.getElementById("btnCancelar").style.display = "block";
   cambiarTab('movimientos', document.querySelectorAll('.nav-btn')[1]);
@@ -111,14 +108,11 @@ function editarMovimiento(i) {
 function eliminarMovimiento(i) {
   if (!confirm("¿Eliminar este movimiento?")) return;
   if (editandoIdx !== null) {
-    if (editandoIdx === i) {
-      cancelarEdicion();
-    } else if (editandoIdx > i) {
-      editandoIdx--;
-    }
+    if (editandoIdx === i) cancelarEdicion();
+    else if (editandoIdx > i) editandoIdx--;
   }
   movimientos.splice(i, 1);
-  guardarLS(); poblarFiltroMeses(); renderizar();
+  guardarLS(); poblarFiltroMeses(); renderizar(); renderPresupuesto();
 }
 
 function guardarLS() {
@@ -127,7 +121,6 @@ function guardarLS() {
   localStorage.setItem("metas",        JSON.stringify(metas));
 }
 
-// ── FILTROS ──
 function poblarFiltroMeses() {
   const sel = document.getElementById("filtroMes");
   const actual = sel.value;
@@ -138,7 +131,7 @@ function poblarFiltroMeses() {
   sel.innerHTML = '<option value="">Todos los meses</option>';
   [...meses].sort().reverse().forEach(mes => {
     const [a, n] = mes.split("-");
-    const nombre = new Date(a, n-1).toLocaleDateString("es-AR", { month: "long", year: "numeric" });
+    const nombre = new Date(a, n - 1).toLocaleDateString("es-AR", { month: "long", year: "numeric" });
     const o = document.createElement("option");
     o.value = mes;
     o.textContent = nombre.charAt(0).toUpperCase() + nombre.slice(1);
@@ -147,11 +140,9 @@ function poblarFiltroMeses() {
   });
 }
 
-// ── RENDERIZAR ──
 function renderizar() {
   const filtroMes  = document.getElementById("filtroMes").value;
   const filtroTipo = document.getElementById("filtroTipo").value;
-
   const filtrados = movimientos.filter(m =>
     pertenece(m) &&
     (!filtroMes  || (m.fecha && m.fecha.startsWith(filtroMes))) &&
@@ -170,21 +161,24 @@ function renderizar() {
 
   if (filtroMes) {
     const [a, n] = filtroMes.split("-");
-    document.getElementById("periodoLabel").textContent = new Date(a, n-1).toLocaleDateString("es-AR", { month: "long", year: "numeric" });
+    document.getElementById("periodoLabel").textContent =
+      new Date(a, n - 1).toLocaleDateString("es-AR", { month: "long", year: "numeric" });
   } else {
     document.getElementById("periodoLabel").textContent = "Todos los períodos";
   }
 
-  // Lista movimientos
   const lista = document.getElementById("listaMovimientos");
-  lista.className = "list-group";
+  lista.className = "list-group glass";
   lista.innerHTML = "";
+
   if (filtrados.length === 0) {
     lista.innerHTML = '<div class="empty"><span class="empty-icon">📭</span>Sin movimientos para mostrar.</div>';
   } else {
     [...filtrados].reverse().forEach(mov => {
       const idx = movimientos.indexOf(mov);
-      const fecha = mov.fecha ? new Date(mov.fecha + "T00:00:00").toLocaleDateString("es-AR", { day: "numeric", month: "short" }) : "";
+      const fecha = mov.fecha
+        ? new Date(mov.fecha + "T00:00:00").toLocaleDateString("es-AR", { day: "numeric", month: "short" })
+        : "";
       const isIng = mov.tipo === "Ingreso";
       const row = document.createElement("div");
       row.className = "list-row";
@@ -214,23 +208,35 @@ function renderizar() {
 
 function actualizarCategoriasList(filtrados) {
   const cont = document.getElementById("listaCategorias");
+  cont.className = "list-group glass";
   cont.innerHTML = "";
   const res = {};
   filtrados.forEach(m => { res[m.categoria] = (res[m.categoria] || 0) + m.monto; });
-  const sorted = Object.entries(res).sort((a,b) => b[1]-a[1]);
+  const sorted = Object.entries(res).sort((a, b) => b[1] - a[1]);
   if (sorted.length === 0) {
     cont.innerHTML = '<div class="empty"><span class="empty-icon">📊</span>Sin datos aún.</div>';
     return;
   }
+  const maxVal = sorted[0][1];
   sorted.forEach(([cat, total]) => {
+    const pct = Math.round((total / maxVal) * 100);
+    const isEgreso = filtrados.some(m => m.categoria === cat && m.tipo === "Egreso");
+    const color = isEgreso ? "var(--red)" : "var(--emerald)";
     const row = document.createElement("div");
     row.className = "list-row";
-    row.innerHTML = `<span style="color:var(--text-1);font-size:15px">${cat}</span><span style="font-size:15px;font-weight:500;color:var(--text-1)">$${total.toLocaleString("es-AR")}</span>`;
+    row.style.flexDirection = "column";
+    row.style.alignItems = "stretch";
+    row.style.gap = "6px";
+    row.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span style="color:var(--text-1);font-size:15px;font-weight:500">${cat}</span>
+        <span style="font-size:15px;font-weight:600;color:var(--text-1)">$${total.toLocaleString("es-AR")}</span>
+      </div>
+      <div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${color}"></div></div>`;
     cont.appendChild(row);
   });
 }
 
-// ── MINI DASHBOARD (sin gráficos) ──
 function diasEnPeriodo(filtroMes, filtrados) {
   if (filtroMes) {
     const [a, n] = filtroMes.split("-").map(Number);
@@ -240,12 +246,10 @@ function diasEnPeriodo(filtroMes, filtrados) {
   if (fechas.length === 0) return 1;
   const ini = new Date(fechas[0] + "T00:00:00");
   const fin = new Date(fechas[fechas.length - 1] + "T00:00:00");
-  const dias = Math.round((fin - ini) / 86400000) + 1;
-  return Math.max(dias, 1);
+  return Math.max(Math.round((fin - ini) / 86400000) + 1, 1);
 }
 
 function renderDashboard(ingresos, egresos, filtrados, filtroMes) {
-  // Barra comparativa ingresos vs egresos
   const total = ingresos + egresos;
   const pctIng = total > 0 ? Math.round((ingresos / total) * 100) : 50;
   const pctEgr = 100 - pctIng;
@@ -253,49 +257,48 @@ function renderDashboard(ingresos, egresos, filtrados, filtroMes) {
   document.getElementById("balBarEgr").style.width = pctEgr + "%";
   document.getElementById("balPctIng").textContent = pctIng + "%";
   document.getElementById("balPctEgr").textContent = pctEgr + "%";
-
-  // Tasa de ahorro: (ingresos - egresos) / ingresos, calculada automáticamente
-  // a partir de los movimientos cargados en el período filtrado.
   const tasa = ingresos > 0 ? Math.round(((ingresos - egresos) / ingresos) * 100) : 0;
   const tasaEl = document.getElementById("kpiTasa");
   tasaEl.textContent = tasa + "%";
   tasaEl.classList.toggle("kpi-neg", tasa < 0);
-
-  // Mayor categoría de gasto
   const porCat = {};
-  filtrados.filter(m => m.tipo === "Egreso").forEach(m => { porCat[m.categoria] = (porCat[m.categoria] || 0) + m.monto; });
-  const topCat = Object.entries(porCat).sort((a,b) => b[1]-a[1])[0];
+  filtrados.filter(m => m.tipo === "Egreso").forEach(m => {
+    porCat[m.categoria] = (porCat[m.categoria] || 0) + m.monto;
+  });
+  const topCat = Object.entries(porCat).sort((a, b) => b[1] - a[1])[0];
   document.getElementById("kpiTopCat").textContent = topCat ? topCat[0] : "—";
   document.getElementById("kpiTopCatMonto").textContent = topCat ? "$" + topCat[1].toLocaleString("es-AR") : "$0";
-
-  // Promedio diario de gasto
   const dias = diasEnPeriodo(filtroMes, filtrados);
   const promedio = Math.round(egresos / dias);
   document.getElementById("kpiPromedio").textContent = "$" + promedio.toLocaleString("es-AR");
-
-  // Cantidad de movimientos
   document.getElementById("kpiMovs").textContent = filtrados.length;
 }
 
-// ── INFO TASA DE AHORRO ──
 function explicarTasaAhorro() {
   alert(
     "¿Cómo se calcula la tasa de ahorro?\n\n" +
-    "Es automática: se calcula con (Ingresos − Egresos) / Ingresos del período que estés viendo. No hay que cargarla a mano.\n\n" +
-    "Para que sea correcta, registrá tus ingresos y egresos en la pestaña 'Movimientos'.\n\n" +
-    "Si lo que querés es guardar plata para un objetivo puntual (vacaciones, un auto, etc.), usá la pestaña 'Metas': ahí podés crear una meta y tocar '+ Agregar' para sumar lo que vayas ahorrando."
+    "Es automática: (Ingresos − Egresos) / Ingresos del período que estés viendo.\n\n" +
+    "Para que sea correcta, registrá tus ingresos y egresos en 'Movimientos'.\n\n" +
+    "Si querés guardar para un objetivo (vacaciones, auto, etc.), usá la pestaña 'Metas'."
   );
 }
 
-// ── PRESUPUESTO ──
 function abrirModalPresupuesto() {
   const sel = document.getElementById("budgetCat");
   sel.innerHTML = "";
+  const usadas = Object.keys(presupuestos)
+    .filter(k => k.startsWith(modoActual + "_"))
+    .map(k => k.replace(modoActual + "_", ""));
   categorias.Egreso.forEach(c => {
+    if (usadas.includes(c)) return;
     const o = document.createElement("option");
     o.value = o.textContent = c;
     sel.appendChild(o);
   });
+  if (sel.options.length === 0) {
+    alert("Ya tenés presupuestos en todas las categorías. Eliminá uno antes de agregar otro.");
+    return;
+  }
   document.getElementById("budgetMonto").value = "";
   document.getElementById("modalPresupuesto").classList.add("open");
 }
@@ -308,37 +311,67 @@ function guardarPresupuesto() {
   guardarLS(); cerrarModales(); renderPresupuesto();
 }
 
+function eliminarPresupuesto(key) {
+  const cat = key.replace(modoActual + "_", "");
+  if (!confirm("¿Eliminar el presupuesto de \"" + cat + "\"?")) return;
+  delete presupuestos[key];
+  guardarLS(); renderPresupuesto();
+}
+
 function renderPresupuesto() {
-  const mes = new Date().toISOString().slice(0, 7);
+  const filtroMes = document.getElementById("filtroMes") ? document.getElementById("filtroMes").value : "";
+  const mes = filtroMes || new Date().toISOString().slice(0, 7);
   const cont = document.getElementById("budgetList");
-  cont.className = "list-group";
+  cont.className = "list-group glass";
   cont.innerHTML = "";
   const keys = Object.keys(presupuestos).filter(k => k.startsWith(modoActual + "_"));
   if (keys.length === 0) {
     cont.innerHTML = '<div class="empty"><span class="empty-icon">🎯</span>No hay presupuestos aún.</div>';
     return;
   }
+  let totalLimite = 0, totalGastado = 0;
   keys.forEach(key => {
     const cat     = key.replace(modoActual + "_", "");
     const limite  = presupuestos[key];
-    const gastado = movimientos.filter(m => pertenece(m) && m.tipo === "Egreso" && m.categoria === cat && m.fecha && m.fecha.startsWith(mes)).reduce((s,m) => s+m.monto, 0);
+    const gastado = movimientos
+      .filter(m => pertenece(m) && m.tipo === "Egreso" && m.categoria === cat && m.fecha && m.fecha.startsWith(mes))
+      .reduce((s, m) => s + m.monto, 0);
     const pct = Math.min((gastado / limite) * 100, 100);
     const cls = pct >= 100 ? "over" : pct >= 80 ? "warn" : "ok";
+    totalLimite  += limite;
+    totalGastado += gastado;
     const div = document.createElement("div");
     div.className = "budget-row";
     div.innerHTML = `
       <div class="budget-head">
         <span class="budget-name">${cat}</span>
-        <span class="budget-nums">$${gastado.toLocaleString("es-AR")} / <b>$${limite.toLocaleString("es-AR")}</b></span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="budget-nums">$${gastado.toLocaleString("es-AR")} / <b>$${limite.toLocaleString("es-AR")}</b></span>
+          <button class="btn-row-action" onclick="eliminarPresupuesto('${key}')" title="Eliminar" style="padding:3px 7px;font-size:11px">✕</button>
+        </div>
       </div>
       <div class="prog-bar"><div class="prog-fill ${cls}" style="width:${pct}%"></div></div>`;
     cont.appendChild(div);
   });
+  if (keys.length > 1) {
+    const totalPct = Math.min((totalGastado / totalLimite) * 100, 100);
+    const totalCls = totalPct >= 100 ? "over" : totalPct >= 80 ? "warn" : "ok";
+    const totalDiv = document.createElement("div");
+    totalDiv.className = "budget-row";
+    totalDiv.style.background = "var(--surface-2)";
+    totalDiv.style.fontWeight = "600";
+    totalDiv.innerHTML = `
+      <div class="budget-head">
+        <span class="budget-name">Total</span>
+        <span class="budget-nums">$${totalGastado.toLocaleString("es-AR")} / <b>$${totalLimite.toLocaleString("es-AR")}</b></span>
+      </div>
+      <div class="prog-bar"><div class="prog-fill ${totalCls}" style="width:${totalPct}%"></div></div>`;
+    cont.appendChild(totalDiv);
+  }
 }
 
-// ── METAS ──
 function abrirModalMeta() {
-  ["metaNombre","metaObjetivo","metaAhorrado"].forEach(id => document.getElementById(id).value = "");
+  ["metaNombre", "metaObjetivo", "metaAhorrado"].forEach(id => document.getElementById(id).value = "");
   document.getElementById("modalMeta").classList.add("open");
 }
 
@@ -376,8 +409,7 @@ function eliminarMeta(idx) {
 function renderMetas() {
   const grid = document.getElementById("metaGrid");
   grid.innerHTML = "";
-  const del = metas.map((m,i) => ({...m, _i:i})).filter(m => (m.entidad||'personal') === modoActual);
-
+  const del = metas.map((m, i) => ({ ...m, _i: i })).filter(m => (m.entidad || 'personal') === modoActual);
   if (del.length === 0) {
     const empty = document.createElement("div");
     empty.style.gridColumn = "1/-1";
@@ -385,12 +417,11 @@ function renderMetas() {
     empty.innerHTML = '<span class="empty-icon">⭐</span>Todavía no tenés metas. Creá la primera.';
     grid.appendChild(empty);
   }
-
   del.forEach(m => {
     const pct = Math.min(Math.round((m.ahorrado / m.objetivo) * 100), 100);
     const cls = pct >= 100 ? "over" : pct >= 60 ? "warn" : "ok";
     const card = document.createElement("div");
-    card.className = "meta-card";
+    card.className = "meta-card glass";
     card.innerHTML = `
       <span class="meta-emoji">${m.icono}</span>
       <div class="meta-name">${m.nombre}</div>
@@ -403,7 +434,6 @@ function renderMetas() {
       </div>`;
     grid.appendChild(card);
   });
-
   const btnNew = document.createElement("button");
   btnNew.className = "btn-add-meta";
   btnNew.textContent = "+ Nueva meta";
@@ -411,7 +441,6 @@ function renderMetas() {
   grid.appendChild(btnNew);
 }
 
-// ── MODALES ──
 function cerrarModales() {
   document.querySelectorAll(".overlay").forEach(m => {
     m.classList.remove("open");
@@ -420,16 +449,17 @@ function cerrarModales() {
   });
 }
 
-// ── UTILS ──
 function exportarCSV() {
-  if (movimientos.length === 0) { alert("No hay movimientos para exportar."); return; }
-  const enc = ["Fecha","Tipo","Categoría","Monto","Descripción","Entidad"];
-  const filas = movimientos.map(m => [m.fecha, m.tipo, m.categoria, m.monto, m.descripcion||"", m.entidad||"personal"]);
-  const csv = [enc,...filas].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const del = movimientos.filter(pertenece);
+  if (del.length === 0) { alert("No hay movimientos para exportar."); return; }
+  const enc  = ["Fecha", "Tipo", "Categoría", "Monto", "Descripción"];
+  const filas = del.map(m => [m.fecha, m.tipo, m.categoria, m.monto, m.descripcion || ""]);
+  const csv = [enc, ...filas].map(r => r.map(c => "\"" + String(c).replace(/"/g, '""') + "\"").join(",")).join("\n");
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob(["\uFEFF"+csv], {type:"text/csv;charset=utf-8;"}));
-  a.download = `finanzas-${modoActual}-${new Date().toISOString().slice(0,10)}.csv`;
+  a.href = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" }));
+  a.download = "finanzas-" + modoActual + "-" + new Date().toISOString().slice(0, 10) + ".csv";
   a.click();
+  URL.revokeObjectURL(a.href);
 }
 
 function resetearFecha() {
