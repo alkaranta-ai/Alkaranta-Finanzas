@@ -33,7 +33,6 @@ function cambiarTab(tab, btn) {
   if (tab === 'inicio') renderizar();
   if (tab === 'presupuesto') renderPresupuesto();
   if (tab === 'metas') renderMetas();
-  if (tab === 'logros' && typeof actualizarGamificacion === 'function') actualizarGamificacion();
 }
 
 // ── MODO ──
@@ -80,7 +79,6 @@ function guardarMovimiento() {
     movimientos.push(mov);
   }
   guardarLS(); limpiar(); poblarFiltroMeses(); renderizar();
-  if (typeof actualizarGamificacion === 'function') actualizarGamificacion();
 }
 
 function limpiar() {
@@ -308,7 +306,6 @@ function guardarPresupuesto() {
   if (!monto || monto <= 0) { alert("Ingresá un monto válido."); return; }
   presupuestos[modoActual + "_" + cat] = monto;
   guardarLS(); cerrarModales(); renderPresupuesto();
-  if (typeof actualizarGamificacion === 'function') actualizarGamificacion();
 }
 
 function renderPresupuesto() {
@@ -354,7 +351,6 @@ function guardarMeta() {
   if (!objetivo || objetivo <= 0) { alert("Ingresá un objetivo válido."); return; }
   metas.push({ nombre, objetivo, ahorrado, icono, entidad: modoActual });
   guardarLS(); cerrarModales(); renderMetas();
-  if (typeof actualizarGamificacion === 'function') actualizarGamificacion();
 }
 
 function abrirModalAhorro(idx) {
@@ -369,7 +365,6 @@ function confirmarAhorro() {
   if (!monto || monto <= 0) { alert("Ingresá un monto válido."); return; }
   metas[metaAhorroIdx].ahorrado += monto;
   guardarLS(); cerrarModales(); renderMetas();
-  if (typeof actualizarGamificacion === 'function') actualizarGamificacion();
 }
 
 function eliminarMeta(idx) {
