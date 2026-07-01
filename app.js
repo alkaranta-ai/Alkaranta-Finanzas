@@ -3,14 +3,64 @@ var categorias = {
   Egreso:  ["Supermercado","Combustible","Servicios","Internet","Telefonía","Salud","Educación","Impuestos","Tarjetas","Entretenimiento","Otros"]
 };
 
-var movimientos  = JSON.parse(localStorage.getItem("movimientos"))  || [];
-var presupuestos = JSON.parse(localStorage.getItem("presupuestos")) || {};
-var metas        = JSON.parse(localStorage.getItem("metas"))        || [];
+// Los datos ahora viven en Firestore (colección "users", un documento por uid).
+// Estas variables se completan cuando llega la primera respuesta del servidor,
+// ver suscribirDatos() en la parte de abajo del archivo.
+var movimientos  = [];
+var presupuestos = {};
+var metas        = [];
+var logrosDesbloqueados = [];
+
 var modoActual   = 'personal';
 var editandoIdx  = null;
 var metaAhorroIdx = null;
+var appIniciada  = false;
+var guardando    = false;
 
-document.addEventListener("DOMContentLoaded", function() {
+// ---------------------------------------------------------------
+// Sincronización con Firestore
+// ---------------------------------------------------------------
+
+function suscribirDatos(uid) {
+  var ref = db.collection("users").doc(uid);
+  unsubscribeSnapshot = ref.onSnapshot(function(snap) {
+    var data = snap.exists ? snap.data() : {};
+    movimientos = data.movimientos || [];
+    presupuestos = data.presupuestos || {};
+    metas = data.metas || [];
+    logrosDesbloqueados = data.logros || [];
+
+    if (!appIniciada) {
+      appIniciada = true;
+      inicializarUI();
+    } else {
+      // Actualización en vivo (por ejemplo, desde otro dispositivo): re-renderizamos.
+      poblarFiltroMeses();
+      renderizar();
+      renderPresupuesto();
+      renderMetas();
+      renderLogros();
+    }
+  }, function(err) {
+    console.error("Error de sincronización:", err);
+  });
+}
+
+function guardarDatos() {
+  if (!currentUser) return Promise.resolve();
+  guardando = true;
+  return db.collection("users").doc(currentUser.uid).set({
+    movimientos: movimientos,
+    presupuestos: presupuestos,
+    metas: metas,
+    logros: logrosDesbloqueados
+  }, { merge: true }).catch(function(err) {
+    console.error("No se pudo guardar en la nube:", err);
+    alert("No se pudo guardar. Revisá tu conexión a internet.");
+  }).finally(function() { guardando = false; });
+}
+
+function inicializarUI() {
   document.getElementById("fecha").value = new Date().toISOString().split("T")[0];
   actualizarCategorias();
   poblarFiltroMeses();
@@ -21,7 +71,11 @@ document.addEventListener("DOMContentLoaded", function() {
   document.querySelectorAll(".overlay").forEach(function(m) {
     m.addEventListener("click", function(e) { if (e.target === m) cerrarModales(); });
   });
-});
+}
+
+// ---------------------------------------------------------------
+// Navegación
+// ---------------------------------------------------------------
 
 function cambiarTab(tab, btn) {
   document.querySelectorAll('.tab').forEach(function(s) { s.classList.remove('active'); });
@@ -60,6 +114,10 @@ function actualizarCategorias() {
   });
 }
 
+// ---------------------------------------------------------------
+// Movimientos
+// ---------------------------------------------------------------
+
 function guardarMovimiento() {
   var fecha       = document.getElementById("fecha").value;
   var tipo        = document.getElementById("tipo").value;
@@ -77,7 +135,7 @@ function guardarMovimiento() {
   } else {
     movimientos.push(mov);
   }
-  guardarLS(); limpiar(); poblarFiltroMeses(); renderizar(); renderPresupuesto();
+  guardarDatos(); limpiar(); poblarFiltroMeses(); renderizar(); renderPresupuesto();
   checkLogros();
 }
 
@@ -116,14 +174,8 @@ function eliminarMovimiento(i) {
     else if (editandoIdx > i) editandoIdx--;
   }
   movimientos.splice(i, 1);
-  guardarLS(); poblarFiltroMeses(); renderizar(); renderPresupuesto();
+  guardarDatos(); poblarFiltroMeses(); renderizar(); renderPresupuesto();
   checkLogros();
-}
-
-function guardarLS() {
-  localStorage.setItem("movimientos",  JSON.stringify(movimientos));
-  localStorage.setItem("presupuestos", JSON.stringify(presupuestos));
-  localStorage.setItem("metas",        JSON.stringify(metas));
 }
 
 function poblarFiltroMeses() {
@@ -289,6 +341,10 @@ function explicarTasaAhorro() {
   );
 }
 
+// ---------------------------------------------------------------
+// Presupuesto
+// ---------------------------------------------------------------
+
 function abrirModalPresupuesto() {
   var sel = document.getElementById("budgetCat");
   sel.innerHTML = "";
@@ -315,7 +371,7 @@ function guardarPresupuesto() {
   var monto = Number(document.getElementById("budgetMonto").value);
   if (!monto || monto <= 0) { alert("Ingresá un monto válido."); return; }
   presupuestos[modoActual + "_" + cat] = monto;
-  guardarLS(); cerrarModales(); renderPresupuesto();
+  guardarDatos(); cerrarModales(); renderPresupuesto();
   checkLogros();
 }
 
@@ -323,7 +379,7 @@ function eliminarPresupuesto(key) {
   var cat = key.replace(modoActual + "_", "");
   if (!confirm("¿Eliminar el presupuesto de \"" + cat + "\"?")) return;
   delete presupuestos[key];
-  guardarLS(); renderPresupuesto();
+  guardarDatos(); renderPresupuesto();
   checkLogros();
 }
 
@@ -379,6 +435,10 @@ function renderPresupuesto() {
   }
 }
 
+// ---------------------------------------------------------------
+// Metas
+// ---------------------------------------------------------------
+
 function abrirModalMeta() {
   ["metaNombre", "metaObjetivo", "metaAhorrado"].forEach(function(id) { document.getElementById(id).value = ""; });
   document.getElementById("modalMeta").classList.add("open");
@@ -392,7 +452,7 @@ function guardarMeta() {
   if (!nombre) { alert("Ingresá un nombre."); return; }
   if (!objetivo || objetivo <= 0) { alert("Ingresá un objetivo válido."); return; }
   metas.push({ nombre: nombre, objetivo: objetivo, ahorrado: ahorrado, icono: icono, entidad: modoActual });
-  guardarLS(); cerrarModales(); renderMetas();
+  guardarDatos(); cerrarModales(); renderMetas();
   checkLogros();
 }
 
@@ -407,14 +467,14 @@ function confirmarAhorro() {
   var monto = Number(document.getElementById("ahorroMonto").value);
   if (!monto || monto <= 0) { alert("Ingresá un monto válido."); return; }
   metas[metaAhorroIdx].ahorrado += monto;
-  guardarLS(); cerrarModales(); renderMetas();
+  guardarDatos(); cerrarModales(); renderMetas();
   checkLogros();
 }
 
 function eliminarMeta(idx) {
   if (!confirm("¿Eliminar esta meta?")) return;
   metas.splice(idx, 1);
-  guardarLS(); renderMetas();
+  guardarDatos(); renderMetas();
   checkLogros();
 }
 
@@ -484,6 +544,10 @@ function resetearFecha() {
   document.getElementById("fecha").value = new Date().toISOString().split("T")[0];
 }
 
+// ---------------------------------------------------------------
+// Logros
+// ---------------------------------------------------------------
+
 var LOGROS_DEF = [
   { id: 'primer_mov',    emoji: '🎬', nombre: 'Primer paso',       desc: 'Registra tu primer movimiento' },
   { id: 'primer_ing',    emoji: '💰', nombre: 'Primer ingreso',    desc: 'Registra tu primer ingreso' },
@@ -540,20 +604,20 @@ function checkLogros() {
   delModo.filter(function(m) { return m.tipo === 'Egreso'; }).forEach(function(m) { catsEgr[m.categoria] = true; });
   if (Object.keys(catsEgr).length >= 5) ahora.push('cats_5');
 
-  var antes = JSON.parse(localStorage.getItem("logros_desbloqueados")) || [];
-  localStorage.setItem("logros_desbloqueados", JSON.stringify(ahora));
-  return JSON.stringify(antes) !== JSON.stringify(ahora);
+  var cambio = JSON.stringify(logrosDesbloqueados) !== JSON.stringify(ahora);
+  logrosDesbloqueados = ahora;
+  if (cambio) { guardarDatos(); renderLogros(); }
+  return cambio;
 }
 
 function renderLogros() {
   var grid = document.getElementById("logrosGrid");
   grid.innerHTML = "";
-  var desbloqueados = JSON.parse(localStorage.getItem("logros_desbloqueados")) || [];
   var total = LOGROS_DEF.length;
   var completados = 0;
 
   LOGROS_DEF.forEach(function(logro) {
-    var unlocked = desbloqueados.indexOf(logro.id) !== -1;
+    var unlocked = logrosDesbloqueados.indexOf(logro.id) !== -1;
     if (unlocked) completados++;
     var card = document.createElement("div");
     card.className = "logro-card glass" + (unlocked ? "" : " locked");
