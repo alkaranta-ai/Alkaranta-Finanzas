@@ -52,8 +52,8 @@ function actualizarUIUsuario(user) {
   var chipInicial = document.getElementById("userChipInicial");
   if (chipInicial) chipInicial.textContent = mostrar.charAt(0).toUpperCase();
 
-  var saludo = document.getElementById("saludoUsuario");
-  if (saludo) saludo.textContent = "Qué bueno volver a verte, " + mostrar;
+  var saludoTexto = document.getElementById("saludoTexto");
+  if (saludoTexto) saludoTexto.textContent = "Qué bueno volver a verte, " + mostrar;
 
   var brand = document.getElementById("brandName");
   if (brand) {
