@@ -1,4 +1,4 @@
-var categorias = {
+var categoriasDefault = {
   Ingreso: [
     "Sueldo",
     "Horas Extras",
@@ -55,6 +55,12 @@ var categorias = {
   ]
 };
 
+// "categorias" arranca con los valores por defecto y se sobreescribe con lo
+// que cada usuario tenga guardado en Firestore (así cada cuenta puede
+// personalizar, agregar o borrar sus propias categorías).
+var categorias = JSON.parse(JSON.stringify(categoriasDefault));
+var tabCategoriaActual = 'Ingreso';
+
 // Los datos ahora viven en Firestore (colección "users", un documento por uid).
 // Estas variables se completan cuando llega la primera respuesta del servidor,
 // ver suscribirDatos() en la parte de abajo del archivo.
@@ -82,11 +88,18 @@ function suscribirDatos(uid) {
     metas = data.metas || [];
     logrosDesbloqueados = data.logros || [];
 
+    if (data.categorias && data.categorias.Ingreso && data.categorias.Ingreso.length && data.categorias.Egreso && data.categorias.Egreso.length) {
+      categorias = data.categorias;
+    } else {
+      categorias = JSON.parse(JSON.stringify(categoriasDefault));
+    }
+
     if (!appIniciada) {
       appIniciada = true;
       inicializarUI();
     } else {
       // Actualización en vivo (por ejemplo, desde otro dispositivo): re-renderizamos.
+      actualizarCategorias();
       poblarFiltroMeses();
       renderizar();
       renderPresupuesto();
@@ -105,7 +118,8 @@ function guardarDatos() {
     movimientos: movimientos,
     presupuestos: presupuestos,
     metas: metas,
-    logros: logrosDesbloqueados
+    logros: logrosDesbloqueados,
+    categorias: categorias
   }, { merge: true }).catch(function(err) {
     console.error("No se pudo guardar en la nube:", err);
     alert("No se pudo guardar. Revisá tu conexión a internet.");
@@ -158,12 +172,14 @@ function pertenece(m) { return (m.entidad || 'personal') === modoActual; }
 function actualizarCategorias() {
   var tipo = document.getElementById("tipo").value;
   var sel  = document.getElementById("categoria");
+  var actual = sel.value;
   sel.innerHTML = "";
-  categorias[tipo].forEach(function(c) {
+  (categorias[tipo] || []).forEach(function(c) {
     var o = document.createElement("option");
     o.value = o.textContent = c;
     sel.appendChild(o);
   });
+  if (actual && (categorias[tipo] || []).indexOf(actual) !== -1) sel.value = actual;
 }
 
 // ---------------------------------------------------------------
@@ -178,6 +194,7 @@ function guardarMovimiento() {
   var descripcion = document.getElementById("descripcion").value.trim();
   if (!monto || monto <= 0) { alert("Ingresá un monto válido."); return; }
   if (!fecha) { alert("Seleccioná una fecha."); return; }
+  if (!categoria) { alert("Seleccioná o creá una categoría."); return; }
   var mov = { fecha: fecha, tipo: tipo, categoria: categoria, monto: monto, descripcion: descripcion, entidad: modoActual };
   if (editandoIdx !== null) {
     movimientos[editandoIdx] = mov;
@@ -391,6 +408,78 @@ function explicarTasaAhorro() {
     "Para que sea correcta, registrá tus ingresos y egresos en 'Movimientos'.\n\n" +
     "Si querés guardar para un objetivo (vacaciones, auto, etc.), usá la pestaña 'Metas'."
   );
+}
+
+// ---------------------------------------------------------------
+// Categorías personalizadas
+// ---------------------------------------------------------------
+
+function abrirModalCategorias() {
+  tabCategoriaActual = document.getElementById('tipo').value || 'Ingreso';
+  document.getElementById('catTabIngreso').classList.toggle('active', tabCategoriaActual === 'Ingreso');
+  document.getElementById('catTabEgreso').classList.toggle('active', tabCategoriaActual === 'Egreso');
+  document.getElementById('nuevaCategoriaInput').value = '';
+  renderListaCategoriasEdit();
+  document.getElementById('modalCategorias').classList.add('open');
+}
+
+function cambiarTabCategoria(tipo) {
+  tabCategoriaActual = tipo;
+  document.getElementById('catTabIngreso').classList.toggle('active', tipo === 'Ingreso');
+  document.getElementById('catTabEgreso').classList.toggle('active', tipo === 'Egreso');
+  renderListaCategoriasEdit();
+}
+
+function renderListaCategoriasEdit() {
+  var cont = document.getElementById('listaCategoriasEdit');
+  cont.innerHTML = '';
+  var lista = categorias[tabCategoriaActual] || [];
+  if (lista.length === 0) {
+    cont.innerHTML = '<div class="empty" style="padding:24px"><span class="empty-icon">🏷️</span>No hay categorías. Agregá la primera.</div>';
+    return;
+  }
+  lista.forEach(function(cat) {
+    var row = document.createElement('div');
+    row.className = 'list-row';
+    var safe = cat.replace(/'/g, "\\'");
+    row.innerHTML =
+      '<span style="font-size:15px;color:var(--text-1)">' + cat + '</span>' +
+      '<button class="btn-row-action" onclick="eliminarCategoria(\'' + safe + '\')" title="Eliminar">🗑️</button>';
+    cont.appendChild(row);
+  });
+}
+
+function agregarCategoria() {
+  var input = document.getElementById('nuevaCategoriaInput');
+  var nombre = input.value.trim();
+  if (!nombre) { alert('Escribí un nombre para la categoría.'); return; }
+  if (nombre.length > 30) { alert('Usá un nombre más corto (máx. 30 caracteres).'); return; }
+  var lista = categorias[tabCategoriaActual];
+  if (lista.some(function(c) { return c.toLowerCase() === nombre.toLowerCase(); })) {
+    alert('Esa categoría ya existe.');
+    return;
+  }
+  var idxOtros = lista.indexOf('Otros');
+  if (idxOtros !== -1) lista.splice(idxOtros, 0, nombre);
+  else lista.push(nombre);
+  input.value = '';
+  guardarDatos();
+  renderListaCategoriasEdit();
+  actualizarCategorias();
+}
+
+function eliminarCategoria(cat) {
+  var lista = categorias[tabCategoriaActual];
+  if (lista.length <= 1) { alert('Debe quedar al menos una categoría.'); return; }
+  var enUso = movimientos.some(function(m) { return m.tipo === tabCategoriaActual && m.categoria === cat; });
+  var msg = enUso
+    ? 'La categoría "' + cat + '" tiene movimientos registrados. Si la eliminás, esos movimientos quedan igual pero ya no vas a poder elegirla para nuevos. ¿Eliminar de todas formas?'
+    : '¿Eliminar la categoría "' + cat + '"?';
+  if (!confirm(msg)) return;
+  categorias[tabCategoriaActual] = lista.filter(function(c) { return c !== cat; });
+  guardarDatos();
+  renderListaCategoriasEdit();
+  actualizarCategorias();
 }
 
 // ---------------------------------------------------------------
