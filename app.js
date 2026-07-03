@@ -146,6 +146,10 @@ function inicializarUI() {
   document.querySelectorAll(".overlay").forEach(function(m) {
     m.addEventListener("click", function(e) { if (e.target === m) cerrarModales(); });
   });
+  moverIndicadorNav(document.querySelector(".nav-btn.active"), true);
+  window.addEventListener("resize", function() {
+    moverIndicadorNav(document.querySelector(".nav-btn.active"), true);
+  });
 }
 
 // ---------------------------------------------------------------
@@ -157,11 +161,36 @@ function cambiarTab(tab, btn) {
   document.querySelectorAll('.nav-btn').forEach(function(b) { b.classList.remove('active'); });
   document.getElementById('sec-' + tab).classList.add('active');
   btn.classList.add('active');
+  moverIndicadorNav(btn);
   if (tab === 'inicio')        { renderizar(); }
   if (tab === 'movimientos')   { poblarFiltroMeses(); renderizar(); }
   if (tab === 'presupuesto')   { renderPresupuesto(); }
   if (tab === 'metas')         { renderMetas(); }
   if (tab === 'logros')        { renderLogros(); }
+}
+
+// Desliza el "blob" de vidrio líquido del dock inferior hasta quedar
+// detrás del botón activo, imitando el indicador flotante de Apple.
+function moverIndicadorNav(btn, sinTransicion) {
+  var indicador = document.getElementById("navIndicator");
+  var nav = document.getElementById("bottomNav");
+  if (!indicador || !nav || !btn) return;
+  var navRect = nav.getBoundingClientRect();
+  var btnRect = btn.getBoundingClientRect();
+  var left = btnRect.left - navRect.left;
+  var width = btnRect.width;
+  if (sinTransicion) {
+    var prevTransition = indicador.style.transition;
+    indicador.style.transition = "none";
+    indicador.style.width = width + "px";
+    indicador.style.transform = "translateX(" + left + "px)";
+    // Forzar reflow antes de restaurar la transición.
+    indicador.offsetHeight;
+    indicador.style.transition = prevTransition || "";
+  } else {
+    indicador.style.width = width + "px";
+    indicador.style.transform = "translateX(" + left + "px)";
+  }
 }
 
 function cambiarModo(modo) {
