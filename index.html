@@ -181,7 +181,6 @@
       isolation: isolate;
     }
     .hero::before { content: ''; position: absolute; inset: 0; background: var(--glass-highlight); pointer-events: none; z-index: 1; }
-    .hero::after { content: ''; position: absolute; top: 0; left: 24px; right: 24px; height: 3px; border-radius: 0 0 var(--r-pill) var(--r-pill); background: linear-gradient(90deg, var(--emerald-light), var(--emerald)); opacity: 0.85; z-index: 2; }
     .hero-greeting { font-family: 'Caveat', cursive; font-size: 26px; font-weight: 700; color: var(--emerald-dim); opacity: 0.97; margin-bottom: 10px; letter-spacing: 0.2px; line-height: 1.1; display: flex; align-items: center; gap: 7px; position: relative; z-index: 2; }
     .hero-greeting .wave { font-family: 'Inter', sans-serif; font-size: 19px; display: inline-block; animation: wave 1.8s ease-in-out infinite; transform-origin: 70% 70%; }
     @keyframes wave { 0%, 100% { transform: rotate(0deg); } 15% { transform: rotate(14deg); } 30% { transform: rotate(-8deg); } 45% { transform: rotate(14deg); } 60% { transform: rotate(-4deg); } 75% { transform: rotate(10deg); } }
