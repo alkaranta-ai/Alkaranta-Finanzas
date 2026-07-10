@@ -171,10 +171,15 @@ window.FinanceChatApp = {
       ]);
     }
 
-    // --- "¿Cómo vengo / cómo ando / cuál es mi saldo este mes?" ---
+    // --- "¿Cómo vengo / cómo ando / cómo va / cuál es mi saldo este mes?" ---
     const preguntaSaldo =
       msg.includes('como vengo') || msg.includes('como ando') || msg.includes('cual es mi saldo') ||
-      msg.includes('cuanto tengo') || msg.includes('como voy este mes') || msg.includes('como estoy este mes');
+      msg.includes('cuanto tengo') || msg.includes('como voy este mes') || msg.includes('como estoy este mes') ||
+      msg.includes('como va') || msg.includes('como vamos') || msg.includes('como venimos') ||
+      msg.includes('como estamos') || msg.includes('que tal vengo') || msg.includes('que tal voy') ||
+      msg.includes('todo bien') || msg.includes('novedades') || msg.includes('resumen del mes') ||
+      msg.includes('mi saldo') || msg.includes('mi balance') || msg.includes('como te va') ||
+      msg.includes('como venis') || msg.includes('que onda') || (msg.includes('que tal') && !msg.includes('categoria'));
     if (preguntaSaldo) {
       const r = this._resumenMes();
       if (r.cantidad === 0) {
