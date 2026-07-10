@@ -1,9 +1,8 @@
 // IMPORTANTE: cada vez que subas cambios a app.js, gamification.js,
-// gamification-ui.js, index.html, etc., subí también este sw.js
-// cambiando el número de versión de abajo. Eso fuerza a todos los
-// celulares a descartar la caché vieja y bajar los archivos nuevos.
-const CACHE_NAME = 'alkaranta-v2'; // <-- subí este número en cada actualización futura
-
+// gamification-ui.js, index.html, js/financeChat.js, etc., subí también
+// este sw.js cambiando el número de versión de abajo. Eso fuerza a todos
+// los celulares a descartar la caché vieja y bajar los archivos nuevos.
+const CACHE_NAME = 'alkaranta-v3'; // <-- subí este número en cada actualización futura
 // Evento de instalación: precalentamos la caché con los archivos
 // principales para que la app funcione offline.
 self.addEventListener('install', (event) => {
@@ -15,7 +14,8 @@ self.addEventListener('install', (event) => {
         './index.html',
         './app.js',
         './gamification.js',
-        './gamification-ui.js'
+        './gamification-ui.js',
+        './js/financeChat.js'
       ]).catch((err) => {
         // Si algún archivo no existe (ej. nombre distinto), no rompemos
         // la instalación entera por eso.
@@ -27,7 +27,6 @@ self.addEventListener('install', (event) => {
   // inmediatamente, sin esperar a que se cierren todas las pestañas/app.
   self.skipWaiting();
 });
-
 // Evento de activación: borramos cachés de versiones anteriores.
 self.addEventListener('activate', (event) => {
   console.log('Service Worker: Activado (' + CACHE_NAME + ')');
@@ -44,16 +43,11 @@ self.addEventListener('activate', (event) => {
     }).then(() => self.clients.claim()) // FIX: toma control de las pestañas abiertas ya mismo
   );
 });
-
-// Evento fetch: FIX — antes era "cache-first para siempre" (nunca
-// volvía a pedir nada al servidor). Ahora es "network-first":
-// 1) intenta traer la versión más nueva desde la red,
-// 2) si lo logra, actualiza la caché y la devuelve,
-// 3) si no hay internet, recién ahí usa la caché como respaldo.
+// Evento fetch: network-first — intenta traer la versión más nueva desde
+// la red primero, y solo usa la caché como respaldo si no hay internet.
 self.addEventListener('fetch', (event) => {
   // Solo interceptamos pedidos GET (evita romper otros métodos).
   if (event.request.method !== 'GET') return;
-
   event.respondWith(
     fetch(event.request)
       .then((respuestaRed) => {
