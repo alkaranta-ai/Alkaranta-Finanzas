@@ -1,4 +1,4 @@
-======================================================================
+// ==========================================================================
 // FINANCE CHAT — "el Nutrio de las finanzas" para Alkaranta
 // Mismo tono, mismas mañas (lunfardo, humor, che), pero la inteligencia
 // ahora es 100% financiera: lee tus propios movimientos, presupuestos y
@@ -27,6 +27,15 @@ window.FinanceChatApp = {
 
   _lastVariantByCategory: {},
 
+  // Memoria de la conversación actual (no persiste entre recargas, solo
+  // mientras dura la sesión de chat). Guarda de qué se habló último para
+  // poder entender respuestas cortas tipo "dale", "por qué" o "contame más".
+  _context: null,
+
+  _setContext(topic, data) {
+    this._context = { topic, data, ts: Date.now() };
+  },
+
   // ------------------------------------------------------------------
   // Utilidades de texto (mismo approach que Nutrio: sacar tildes, pasar
   // a minúsculas, traducir lunfardo típico de plata/laburo).
@@ -37,13 +46,62 @@ window.FinanceChatApp = {
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');
 
+    // Diccionario de lunfardo/jerga financiera argentina. Va de lo más
+    // específico (frases largas) a lo más genérico (palabras sueltas), y se
+    // aplica en ese orden para no "pisar" una frase con un reemplazo parcial.
     const lunfardo = [
-      [/\bplata\b|\bguita\b|\bmangos\b|\bmanguitos\b|\bmorlacos\b|\bpesos\b/g, 'dinero'],
-      [/\blaburo\b|\blaburando\b|\bchamba\b/g, 'trabajo'],
-      [/\bestoy palo\b|\bestoy seco\b|\bestoy quebrado\b|\bestoy limpio\b|\bno tengo un mango\b/g, 'no tengo dinero'],
-      [/\bme funde\b|\bme fundi\b|\bme funda\b/g, 'gasté de más'],
-      [/\bandar en pedo con la plata\b|\bestoy en la lona\b/g, 'estoy sin dinero'],
-      [/\bahorrar\b/g, 'ahorrar']
+      // --- Sin plata / mal económicamente (frases) ---
+      [/\bestoy en la lona\b|\bestoy en pampa y la via\b|\bestoy a dos velas\b|\bno tengo un cobre\b|\bno tengo un mango\b|\bno tengo un peso partido por la mitad\b|\bestoy sin un mango\b|\bestoy seco\b|\bestoy palo\b|\bestoy limpio\b|\bestoy pelado\b|\bestoy re pelado\b|\bestoy bruja\b|\bestoy con la bruja\b|\bando bruja\b/g, 'no tengo dinero'],
+      [/\bestoy quebrado\b|\bestoy fundido\b|\bestoy re fundido\b|\bestoy en banca rota\b|\bestoy en la ruina\b|\bestoy arruinado\b/g, 'estoy en bancarrota'],
+      [/\bme funde\b|\bme fundi\b|\bme funda\b|\bme re funde\b|\bme come el sueldo\b|\bme come la guita\b/g, 'gasté de más'],
+      [/\bando corto\b|\bando cortisimo\b|\bando justo\b|\bando muy justo\b|\bestoy con lo justo\b|\bestoy re ajustado\b|\bestoy ahogado\b|\bestoy re ahogado\b|\bno doy mas con los gastos\b/g, 'estoy con poco margen económico'],
+      [/\bse me escapa la tortuga\b|\bse me va todo de las manos\b|\bse me va todo\b|\bse me va la plata de las manos\b/g, 'se me va todo el dinero'],
+      [/\bno me cierra el mes\b|\bno me cierran los numeros\b|\bno llego a fin de mes\b|\bno llego a cobrar\b/g, 'no llego a fin de mes'],
+      [/\bhacer la ñoqui\b|\bcaer de ñoqui\b/g, 'trabajar sin hacer nada'],
+      [/\btrabajar en negro\b|\bestoy en negro\b|\blaburo en negro\b/g, 'trabajo sin registrar'],
+      [/\bme cague de hambre\b|\bme muero de hambre\b/g, 'tengo muy poco dinero'],
+
+      // --- Plata en general ---
+      [/\bplata\b|\bguita\b|\bmangos?\b|\bmanguitos?\b|\bmorlacos?\b|\bpesos?\b|\bbilluyos?\b|\bviyuya\b|\bcobre\b|\bmosca\b|\bmoneda\b/g, 'dinero'],
+      [/\bplata negra\b|\bguita negra\b/g, 'dinero no declarado'],
+      [/\bplata blanca\b|\bguita blanca\b/g, 'dinero declarado'],
+
+      // --- Montos / unidades de plata en jerga rioplatense ---
+      [/\buna luca\b/g, 'mil pesos'],
+      [/\blucas\b/g, 'miles de pesos'],
+      [/\bun palo\b|\bun palo verde\b/g, 'un millón'],
+      [/\bpalos\b|\bpalos verdes\b/g, 'millones'],
+      [/\buna gamba\b/g, 'cien pesos'],
+      [/\bgambas\b/g, 'cientos de pesos'],
+      [/\bverdes\b|\bel verde\b/g, 'dólares'],
+      [/\bel blue\b|\bdolar blue\b/g, 'dólar blue'],
+
+      // --- Trabajo / laburo ---
+      [/\blaburo\b|\blaburos\b|\blaburando\b|\blaburar\b|\bchamba\b|\bchambear\b|\bcurro\b|\bcurrar\b/g, 'trabajo'],
+      [/\bme rajaron\b|\bme echaron\b|\bme bocharon del laburo\b|\bquede en la calle\b/g, 'perdí el trabajo'],
+      [/\bcobre en negro\b/g, 'cobré sin recibo'],
+
+      // --- Gastar / comprar ---
+      [/\btirar manteca al techo\b|\btirar la plata\b|\bfundir la plata\b|\bquemar la plata\b/g, 'gastar de más'],
+      [/\bhacerme el gil con la guita\b|\bandar en pedo con la plata\b/g, 'manejar mal el dinero'],
+
+      // --- Ahorrar / juntar ---
+      [/\bjuntar plata\b|\bjuntar guita\b|\bhacer un fondito\b|\bhacer una alcancia\b/g, 'ahorrar'],
+      [/\bahorrar\b/g, 'ahorrar'],
+
+      // --- Deudas / tarjeta ---
+      [/\bestoy debiendo\b|\bdebo guita\b|\bdebo plata\b|\bestoy endeudado\b|\bme come la tarjeta\b|\bla tarjeta me come\b/g, 'tengo deudas'],
+      [/\bpasarla en cuotas\b/g, 'financiar en cuotas'],
+
+      // --- Confirmaciones / expresiones cortas y abreviaturas típicas de chat ---
+      [/\bposta\b/g, 'en serio'],
+      [/\bbarbaro\b|\bre copado\b|\bde diez\b|\bgroso\b|\bgrosa\b/g, 'muy bueno'],
+      [/\bxq\b|\bpq\b/g, 'porque'],
+      [/\btmb\b|\btb\b/g, 'también'],
+      [/\bdsp\b/g, 'después'],
+      [/\bnss\b/g, 'no se'],
+      [/\bfiaca\b/g, 'pereza'],
+      [/\bal pedo\b/g, 'sin sentido']
     ];
     lunfardo.forEach(([regex, replacement]) => {
       s = s.replace(regex, replacement);
@@ -187,6 +245,69 @@ window.FinanceChatApp = {
   },
 
   // ------------------------------------------------------------------
+  // Resuelve respuestas cortas ("dale", "por qué") contra el último tema
+  // hablado, dándole una vuelta de tuerca más de detalle o de acción
+  // concreta, en vez de repetir lo mismo o caer en el default.
+  // ------------------------------------------------------------------
+  _followUpResponse(topic, data, pideDetalle) {
+    switch (topic) {
+      case 'saldo': {
+        const top = this._topCategoriaMes();
+        if (!top) {
+          return this.pickVariant('saldo_detalle', [
+            `Dale, mirando el detalle: todavía no tenés egresos cargados este mes como para señalarte una categoría puntual. Cargá algunos gastos y te digo dónde se te va más. 🔍`
+          ]);
+        }
+        return this.pickVariant('saldo_detalle', [
+          (t) => `Bueno, vamos al detalle: tu categoría más pesada este mes es **${t.categoria}**, con ${this._fmtMoney(t.monto)}. Ahí está el mayor margen si querés ajustar algo. 🔍`,
+          (t) => `Dale. La que más pesa es **${t.categoria}** (${this._fmtMoney(t.monto)}). Si le ponés un presupuesto a esa sola categoría, ya vas a notar el cambio a fin de mes.`
+        ], top);
+      }
+      case 'top_cat': {
+        return this.pickVariant('top_cat_detalle', [
+          (d) => `Podés ponerle un límite mensual a esa categoría desde la pestaña **Presupuesto** — así en vez de "controlarte a pulmón" te aviso yo cuando te estés por pasar. 🎯`,
+          () => `Una opción es revisar movimiento por movimiento de esa categoría en **Movimientos** filtrando por ella, a ver si hay algo puntual que se pueda recortar sin sufrir tanto.`
+        ], data);
+      }
+      case 'presupuesto_riesgo': {
+        return this.pickVariant('presupuesto_riesgo_detalle', [
+          (d) => `Con esas categorías al límite (${d}), lo más rápido es frenar gastos nuevos ahí hasta que arranque el mes que viene, y si podés, redistribuir un poco desde alguna categoría que te sobre.`
+        ], data);
+      }
+      case 'frustracion': {
+        const top = this._topCategoriaMes();
+        return this.pickVariant('frustracion_detalle', [
+          () => top
+            ? `Dale, vamos al grano: tu categoría más pesada este mes es **${top.categoria}** (${this._fmtMoney(top.monto)}). Empezá por ahí, no hace falta tocar todo a la vez.`
+            : `Para arrancar necesito que cargues algunos movimientos de este mes — sin eso ando a ciegas. Cargá aunque sea los últimos días y seguimos.`
+        ], top);
+      }
+      case 'metas': {
+        return this.pickVariant('metas_detalle', [
+          () => `Andá a la pestaña **Metas**, tocá "+ Agregar" en la que quieras reforzar, y sumale lo que puedas este mes. Cualquier monto suma, no hace falta que sea grande.`
+        ]);
+      }
+      case 'tasa': {
+        return this.pickVariant('tasa_detalle', [
+          () => `Se calcula así: (Ingresos − Egresos) dividido Ingresos, multiplicado por 100. O sea, qué porcentaje de lo que entra termina quedando ahorrado en vez de gastado. 📐`
+        ]);
+      }
+      case 'deudas': {
+        return this.pickVariant('deudas_detalle', [
+          () => `Concretamente: hacé una lista con cada deuda, su monto y su tasa de interés. La de tasa más alta (normalmente la tarjeta) va primero. El resto, en paralelo pagás el mínimo hasta que le toque el turno.`
+        ]);
+      }
+      case 'comparar_meses': {
+        return this.pickVariant('comparar_detalle', [
+          () => `Si querés precisión, andá a **Movimientos**, filtrá por el mes que te interesa y ordená por monto — ahí ves rapidísimo qué gasto puntual explica la diferencia.`
+        ]);
+      }
+      default:
+        return null;
+    }
+  },
+
+  // ------------------------------------------------------------------
   // El cerebro: misma estructura que Nutrio (if / pickVariant), pero
   // todo el contenido es de plata, presupuesto, metas y hábitos financieros.
   // ------------------------------------------------------------------
@@ -195,6 +316,25 @@ window.FinanceChatApp = {
     const nameSuffix = (typeof currentUser !== 'undefined' && currentUser && currentUser.displayName)
       ? ` ${currentUser.displayName.split(' ')[0]}`
       : ' che';
+
+    // --- Seguimiento de la conversación: respuestas cortas de confirmación
+    // ("dale", "si", "obvio") o pedidos de profundizar ("por qué", "contame
+    // más", "y eso") se resuelven contra el último tema del que hablamos,
+    // en vez de caer siempre en la respuesta por defecto. ---
+    const msgLimpio = msg.trim();
+    const esAfirmacionCorta = /^(si+|dale|obvio|de una|va|bueno|ok|okey|dale va|joya|en serio|claro|obvio que si)[\s!.]*$/.test(msgLimpio);
+    const pideMasDetalle =
+      msg.includes('por que') || msg.includes('porque es eso') || msg.includes('contame mas') ||
+      msg.includes('dame mas detalle') || msg.includes('dame mas info') || msg.includes('profundiza') ||
+      msg.includes('explicame mejor') || msg.includes('segui contando') || msg.includes('y eso') ||
+      msg.includes('que mas') || msg.includes('algo mas') || msg.includes('en que categoria') ||
+      msg.includes('en cual') || msg.includes('cual seria') || msg.includes('y como lo soluciono') ||
+      msg.includes('y ahora que hago') || msg.includes('que hago entonces');
+
+    if ((esAfirmacionCorta || pideMasDetalle) && this._context && this._context.topic) {
+      const followUp = this._followUpResponse(this._context.topic, this._context.data, pideMasDetalle);
+      if (followUp) return followUp;
+    }
 
     // --- Despedidas ---
     const esDespedida =
@@ -252,6 +392,7 @@ window.FinanceChatApp = {
         msg.includes('estoy mal con la plata') || msg.includes('me estreso por la plata') || msg.includes('me angustia la plata') ||
         msg.includes('estoy ahogado') || msg.includes('no doy mas con los gastos')) {
       const r = this._resumenMes();
+      this._setContext('frustracion', r);
       return this.pickVariant('frustracion', [
         (r) => `Che, entiendo la angustia, no sos el único al que no le alcanza. Vamos a mirarlo juntos: este mes tenés un saldo de ${this._fmtMoney(r.saldo)}${r.saldo < 0 ? '. Está en rojo, pero lo primero es ver en qué categoría se te va más para cortar por ahí' : '.'} ¿Querés que veamos tu categoría más pesada?`,
         () => `Tranqui, respirá. No llegar a fin de mes le pasa a un montón de gente y no es un fracaso personal, es un tema de números que se puede ajustar. Empecemos por lo más simple: ¿tenés presupuestos cargados en tus categorías principales?`,
@@ -291,6 +432,7 @@ window.FinanceChatApp = {
           `Sin movimientos cargados estoy medio ciego. Dale, cargá lo de hoy y arrancamos. 👀`
         ]);
       }
+      this._setContext('saldo', r);
       return this.pickVariant('saldo', [
         (r) => `Este mes vas con ${this._fmtMoney(r.ingresos)} de ingresos y ${this._fmtMoney(r.egresos)} de egresos. Saldo: **${this._fmtMoney(r.saldo)}**${r.saldo < 0 ? ' (che, estás en rojo, ojo con eso) 🔴' : ' 🟢'}.`,
         (r) => `Números del mes: entraron ${this._fmtMoney(r.ingresos)}, salieron ${this._fmtMoney(r.egresos)}. Te queda un saldo de **${this._fmtMoney(r.saldo)}**${r.saldo < 0 ? '. Está negativo, convendría frenar la mano con los gastos. 😬' : '. Vas positivo, seguí así. 👍'}`,
@@ -313,6 +455,7 @@ window.FinanceChatApp = {
       }
       const diferencia = actual.egresos - anterior.egresos;
       const subioBajo = diferencia > 0 ? 'gastaste más' : diferencia < 0 ? 'gastaste menos' : 'gastaste igual';
+      this._setContext('comparar_meses', { actual, anterior, diferencia });
       return this.pickVariant('comparar_meses', [
         (a, ant, dif, txt) => `Comparado con el mes pasado (${this._fmtMoney(ant.egresos)} de egresos), este mes ${txt}: ${this._fmtMoney(a.egresos)}${dif !== 0 ? ` (diferencia de ${this._fmtMoney(Math.abs(dif))})` : ''}. ${dif > 0 ? 'Fijate si hubo algún gasto puntual que explique la suba.' : ''}`,
         (a, ant, dif, txt) => `Mes anterior: ${this._fmtMoney(ant.egresos)} en egresos. Este mes: ${this._fmtMoney(a.egresos)}. O sea que ${txt} ${dif !== 0 ? 'por ' + this._fmtMoney(Math.abs(dif)) : ''}.`,
@@ -330,6 +473,7 @@ window.FinanceChatApp = {
           `Sin movimientos no hay magia posible. Anotá tus gastos del mes y te digo exactamente dónde se te escapa la guita. 🔍`
         ]);
       }
+      this._setContext('top_cat', top);
       return this.pickVariant('top_cat', [
         (t) => `Este mes tu categoría más pesada es **${t.categoria}**, con ${this._fmtMoney(t.monto)} gastados. Si querés controlarla, mirá la pestaña de **Presupuesto** y ponele un límite. 🎯`,
         (t) => `"${t.categoria}" es donde más se te escapa la plata este mes: ${this._fmtMoney(t.monto)}. Un presupuesto en esa categoría capaz te ordena un poco. 📌`,
@@ -367,6 +511,7 @@ window.FinanceChatApp = {
       }
       const enRiesgo = estado.filter(e => e.pct >= 0.8).sort((a, b) => b.pct - a.pct);
       if (enRiesgo.length === 0) {
+        this._setContext('presupuesto_ok', estado);
         return this.pickVariant('presupuesto_ok', [
           `Vas bien con tus presupuestos, ninguno está por pasarse del límite todavía. Seguí así. 💪`,
           `Todo en verde por el momento con tus presupuestos. Ni una categoría al límite. 🟢`,
@@ -374,6 +519,7 @@ window.FinanceChatApp = {
         ]);
       }
       const detalle = enRiesgo.map(e => `**${e.cat}**: ${Math.round(e.pct * 100)}% usado`).join(', ');
+      this._setContext('presupuesto_riesgo', detalle);
       return this.pickVariant('presupuesto_riesgo', [
         (d) => `Ojo con estos presupuestos que están al límite o pasados: ${d}. Capaz conviene frenar un poco el gasto ahí hasta fin de mes. ⚠️`,
         (d) => `Che, tenés categorías complicadas con el presupuesto: ${d}. Nada grave, pero vigilalas de acá a fin de mes. 👀`,
@@ -396,6 +542,7 @@ window.FinanceChatApp = {
         const pct = Math.min(Math.round((m.ahorrado / m.objetivo) * 100), 100);
         return `**${m.nombre}**: ${pct}%`;
       }).join(', ');
+      this._setContext('metas', detalle);
       return this.pickVariant('metas', [
         (d) => `Así vas con tus metas: ${d}. Metele que cada peso que sumás cuenta. 💪`,
         (d) => `Tu progreso de metas: ${d}. Si podés destinar un poco más este mes, andá a la meta y sumale un ahorro. ⭐`,
@@ -412,6 +559,7 @@ window.FinanceChatApp = {
           `No tengo ingresos cargados este mes, así que no puedo calcular tu tasa de ahorro. Cargá tus ingresos en **Movimientos** y probamos de nuevo. 📊`
         ]);
       }
+      this._setContext('tasa', tasa);
       return this.pickVariant('tasa', [
         (t) => `Tu tasa de ahorro este mes es del **${t}%** (o sea, de cada $100 que entran, estás guardando $${t}). Como referencia general, arriba del 20% ya es una buena base. 📈`,
         (t) => `Este mes estás ahorrando un **${t}%** de lo que ingresa. ${t >= 20 ? 'Está bueno ese número, seguí así.' : 'Si podés estirarlo un poco más, mejor, pero no te agobies.'} 💡`,
@@ -422,6 +570,7 @@ window.FinanceChatApp = {
 
     // --- Deudas / tarjeta de crédito ---
     if (msg.includes('deuda') || msg.includes('tarjeta de credito') || msg.includes('debo') || msg.includes('cuotas') || msg.includes('estoy endeudado')) {
+      this._setContext('deudas', null);
       return this.pickVariant('deudas', [
         `Con deudas y tarjeta, la regla de oro es: primero pagá la que tenga la tasa de interés más alta (generalmente la tarjeta de crédito), después las demás. Si podés pagar el total del resumen y no solo el mínimo, siempre conviene — el mínimo te come de a poco con intereses. No soy asesor financiero, esto es orientativo. 💳`,
         `Si tenés varias deudas, ordenalas por tasa de interés y atacá primero la más cara. Y ojo con acumular cuotas nuevas mientras estás pagando otras — ahí es donde el presupuesto se te desarma. Puedo ayudarte a ver cuánto te está pesando cada categoría si me contás más. 📋`,
@@ -612,7 +761,7 @@ window.FinanceChatApp = {
 // Para que aparezca como una pestaña de chat en tu app, necesitás:
 //
 // 1. Un botón más en tu #bottomNav (junto a Inicio/Movimientos/etc.) que
-//    llame a cambiarTab('chat', this). mmm
+//    llame a cambiarTab('chat', this).
 // 2. Una sección nueva <div class="tab" id="sec-chat"> con el scroll de
 //    mensajes y el input, en el mismo estilo "glass" que ya usás.
 // 3. Un par de funciones de UI (equivalentes a UI.sendChat() de Nutrio)
@@ -622,4 +771,4 @@ window.FinanceChatApp = {
 // No tengo tu index.html/CSS todavía (colores --emerald/--red, clase
 // .glass, cómo está armado el "blob" del bottomNav), así que preferí
 // dejarte el cerebro ya funcionando y pedirte esos archivos para
-// terminar de pegar la parte visual sin
+// terminar de pegar la parte visual sin romperte el diseño actual.
