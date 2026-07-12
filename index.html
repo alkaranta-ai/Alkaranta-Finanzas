@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -678,6 +679,7 @@
 <script src="auth.js"></script>
 <script src="app.js"></script>
 <script src="js/financeChat.js"></script>
+<script src="js/financeChatAI.js"></script>
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
@@ -714,22 +716,40 @@
     box.scrollTop = box.scrollHeight;
   }
 
-  function enviarMensajeChat() {
+  function mostrarEscribiendo() {
+    var box = document.getElementById('chatBox');
+    if (!box) return;
+    var div = document.createElement('div');
+    div.className = 'chat-msg bot';
+    div.id = 'escribiendoIndicador';
+    div.style.opacity = '0.6';
+    div.innerHTML = 'Escribiendo...';
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function ocultarEscribiendo() {
+    var indicador = document.getElementById('escribiendoIndicador');
+    if (indicador) indicador.remove();
+  }
+
+  async function enviarMensajeChat() {
     var input = document.getElementById('chatInput');
     if (!input) return;
     var msg = input.value.trim();
     if (!msg) return;
     agregarBurbujaChat(msg, 'user');
     input.value = '';
-    setTimeout(function() {
-      try {
-        var resp = window.FinanceChatApp.getBotResponse(msg);
-        agregarBurbujaChat(resp.text, 'bot');
-      } catch (err) {
-        agregarBurbujaChat('Uy, tuve un problema para responder. Probá de nuevo en un toque. 🙏', 'bot');
-        console.error(err);
-      }
-    }, 300);
+    mostrarEscribiendo();
+    try {
+      var texto = await window.FinanceChatApp.getBotResponseSmart(msg);
+      ocultarEscribiendo();
+      agregarBurbujaChat(texto, 'bot');
+    } catch (err) {
+      ocultarEscribiendo();
+      agregarBurbujaChat('Uy, tuve un problema para responder. Probá de nuevo en un toque. 🙏', 'bot');
+      console.error(err);
+    }
   }
 
   function preguntarChat(texto) {
