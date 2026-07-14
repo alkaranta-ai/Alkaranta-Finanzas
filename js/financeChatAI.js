@@ -26,6 +26,7 @@
   const WORKER_URL = 'https://misty-cell-91e2finance-chat-alkaranta.alkaranta.workers.dev';
   const LIMITE_DIARIO = 40; // mensajes con IA por día por usuario/dispositivo
   const MAX_HISTORIAL = 10; // turnos de contexto que se le mandan a la IA
+  const TIMEOUT_MS = 7000; // si Gemini/el Worker no contestan en este tiempo, cae al motor de reglas en vez de dejar al usuario esperando
 
   const SYSTEM_PROMPT = `
 IDIOMA: Respondé SIEMPRE en español rioplatense (Argentina). Nunca respondas
@@ -139,11 +140,23 @@ Reglas:
       { role: 'user', parts: [{ text: mensajeConContexto }] },
     ];
 
-    const res = await fetch(WORKER_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ systemPrompt: SYSTEM_PROMPT, contents }),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+    let res;
+    try {
+      res = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ systemPrompt: SYSTEM_PROMPT, contents }),
+        signal: controller.signal,
+      });
+    } catch (err) {
+      if (err.name === 'AbortError') throw new Error('timeout_' + TIMEOUT_MS + 'ms');
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!res.ok) throw new Error('worker_error_' + res.status);
     const data = await res.json();
