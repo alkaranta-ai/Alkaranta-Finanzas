@@ -769,14 +769,109 @@
   });
 
   // ================= Chat financiero: UI =================
+
+  // Velocidad del efecto de escritura (ms por caracter). Bajalo para que
+  // escriba más rápido, subilo para que sea más lento/dramático.
+  var TYPEWRITER_SPEED_MS = 16;
+
+  // Revela un HTML letra por letra dentro de un elemento, respetando los
+  // tags (<strong>, <br>, etc. se insertan enteros de una, no se "escriben"
+  // caracter a caracter, para no romper el marcado a la mitad). Devuelve
+  // una Promise que resuelve cuando terminó de escribir todo.
+  function typeWriterEffectChat(el, html, onTick) {
+    if (!el) return Promise.resolve();
+
+    // Inyecta el CSS del cursor parpadeante una sola vez.
+    if (!document.getElementById('typewriterStylesChat')) {
+      var style = document.createElement('style');
+      style.id = 'typewriterStylesChat';
+      style.textContent =
+        '.chat-msg.bot.is-typing::after {' +
+        '  content: "";' +
+        '  display: inline-block;' +
+        '  width: 2px;' +
+        '  height: 1em;' +
+        '  margin-left: 2px;' +
+        '  vertical-align: text-bottom;' +
+        '  background: currentColor;' +
+        '  opacity: 0.6;' +
+        '  animation: alkarantaCursorBlink 0.8s step-start infinite;' +
+        '}' +
+        '@keyframes alkarantaCursorBlink { 50% { opacity: 0; } }';
+      document.head.appendChild(style);
+    }
+
+    // Si el usuario tiene "reducir movimiento" activado en su sistema, no
+    // tiene sentido forzar la animación: se pinta todo de una.
+    var prefersReducedMotion = window.matchMedia
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+      el.innerHTML = html;
+      return Promise.resolve();
+    }
+
+    var tokens = html.match(/(<[^>]+>|[^<]+)/g) || [];
+    var revealed = '';
+    var tokenIdx = 0;
+    var charIdx = 0;
+
+    el.innerHTML = '';
+    el.classList.add('is-typing');
+
+    return new Promise(function (resolve) {
+      function tick() {
+        if (tokenIdx >= tokens.length) {
+          el.innerHTML = html; // asegura que quede EXACTAMENTE el HTML original
+          el.classList.remove('is-typing');
+          resolve();
+          return;
+        }
+        var token = tokens[tokenIdx];
+        if (token.charAt(0) === '<') {
+          revealed += token;
+          el.innerHTML = revealed;
+          tokenIdx++;
+          charIdx = 0;
+          tick();
+          return;
+        }
+        revealed += token[charIdx];
+        el.innerHTML = revealed;
+        if (onTick) onTick();
+        charIdx++;
+        if (charIdx >= token.length) {
+          tokenIdx++;
+          charIdx = 0;
+        }
+        setTimeout(tick, TYPEWRITER_SPEED_MS);
+      }
+      tick();
+    });
+  }
+
+  // Pinta una burbuja nueva en el chat. Los mensajes del usuario ('user')
+  // se pintan de una, como siempre. Los del bot ('bot') se escriben letra
+  // por letra con typeWriterEffectChat. Devuelve una Promise (solo relevante
+  // para 'bot': resuelve cuando terminó de escribir).
   function agregarBurbujaChat(texto, tipo) {
     var box = document.getElementById('chatBox');
-    if (!box) return;
+    if (!box) return Promise.resolve();
     var div = document.createElement('div');
     div.className = 'chat-msg ' + tipo;
-    div.innerHTML = String(texto).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    var html = String(texto).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+    if (tipo !== 'bot') {
+      div.innerHTML = html;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+      return Promise.resolve();
+    }
+
     box.appendChild(div);
     box.scrollTop = box.scrollHeight;
+    return typeWriterEffectChat(div, html, function () {
+      box.scrollTop = box.scrollHeight;
+    });
   }
 
   function mostrarEscribiendo() {
@@ -807,10 +902,10 @@
     try {
       var texto = await window.FinanceChatApp.getBotResponseSmart(msg);
       ocultarEscribiendo();
-      agregarBurbujaChat(texto, 'bot');
+      await agregarBurbujaChat(texto, 'bot');
     } catch (err) {
       ocultarEscribiendo();
-      agregarBurbujaChat('Uy, tuve un problema para responder. Probá de nuevo en un toque. 🙏', 'bot');
+      await agregarBurbujaChat('Uy, tuve un problema para responder. Probá de nuevo en un toque. 🙏', 'bot');
       console.error(err);
     }
   }
@@ -855,4 +950,3 @@
 </script>
 </body>
 </html>
-
