@@ -162,11 +162,18 @@ function cambiarTab(tab, btn) {
   document.getElementById('sec-' + tab).classList.add('active');
   btn.classList.add('active');
   moverIndicadorNav(btn);
+  // El chat maneja su propio scroll interno (para que el header y el input
+  // queden fijos), así que el body no debe scrollear mientras esté activo.
+  document.body.classList.toggle('chat-open', tab === 'chat');
   if (tab === 'inicio')        { renderizar(); }
   if (tab === 'movimientos')   { poblarFiltroMeses(); renderizar(); }
   if (tab === 'presupuesto')   { renderPresupuesto(); }
   if (tab === 'metas')         { renderMetas(); }
   if (tab === 'logros')        { renderLogros(); }
+  if (tab === 'chat') {
+    var box = document.getElementById('chatBox');
+    if (box) box.scrollTop = box.scrollHeight;
+  }
 }
 
 // Desliza el "blob" de vidrio líquido del dock inferior hasta quedar
