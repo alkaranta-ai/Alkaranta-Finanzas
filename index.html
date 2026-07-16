@@ -387,7 +387,7 @@
       pointer-events: none;
       z-index: 0;
     }
-    .bottom-nav { --nav-count: 6; --nav-index: 1; }
+    .bottom-nav { --nav-count: 4; --nav-index: 1; }
     .nav-indicator {
       position: absolute;
       top: 7px;
@@ -414,6 +414,42 @@
     .nav-btn.active { color: var(--emerald-dim); }
     .nav-btn.active .ni { transform: translateY(-1px) scale(1.08); }
     .nav-btn:active { transform: scale(0.92); }
+    .nav-btn .ni.ni-dots svg circle { fill: currentColor; }
+    .mas-menu {
+      position: fixed;
+      left: 16px; right: 16px;
+      bottom: calc(max(14px, env(safe-area-inset-bottom)) + 76px);
+      z-index: 998;
+      max-width: 260px;
+      margin-left: auto;
+      background: var(--surface-modal);
+      -webkit-backdrop-filter: var(--blur-dock);
+      backdrop-filter: var(--blur-dock);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      box-shadow: 0 24px 60px rgba(20,20,25,0.28), inset 0 1px 1px rgba(255,255,255,0.8);
+      padding: 6px;
+      display: flex; flex-direction: column; gap: 2px;
+      opacity: 0; visibility: hidden; transform: scale(0.92) translateY(8px);
+      transform-origin: bottom right;
+      transition: opacity .2s ease, transform .2s cubic-bezier(.34,1.4,.4,1), visibility .2s;
+      isolation: isolate;
+    }
+    .mas-menu::before { content: ''; position: absolute; inset: 0; background: var(--glass-highlight); pointer-events: none; z-index: -1; border-radius: inherit; }
+    .mas-menu.open { opacity: 1; visibility: visible; transform: scale(1) translateY(0); }
+    .mas-menu-item {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 11px 12px; border: none; background: transparent;
+      border-radius: var(--r-md); color: var(--text-1); font-family: inherit; font-size: 14.5px; font-weight: 500;
+      cursor: pointer; text-align: left; touch-action: manipulation;
+      transition: background .15s ease;
+    }
+    .mas-menu-item:active { background: var(--surface-2); }
+    .mas-menu-item .mi { width: 19px; height: 19px; flex-shrink: 0; color: var(--text-2); }
+    .mas-menu-item .mi svg { width: 100%; height: 100%; display: block; stroke: currentColor; }
+    .mas-menu-item.whatsapp .mi { color: #25D366; }
+    .mas-menu-item.whatsapp .mi svg { stroke: none; fill: currentColor; }
+    .mas-menu-sep { height: 1px; background: var(--border-soft); margin: 4px 6px; }
     .tab { display: none; }
     .tab.active { display: block; }
     .logro-progress { margin-bottom: 16px; }
@@ -715,10 +751,15 @@
     <button class="nav-btn" onclick="cambiarTab('chat',this)" aria-label="Chat"><span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span class="nav-label">Chat</span></button>
     <button class="nav-btn active" onclick="cambiarTab('inicio',this)" aria-label="Inicio"><span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span><span class="nav-label">Inicio</span></button>
     <button class="nav-btn" onclick="cambiarTab('movimientos',this)" aria-label="Movimientos"><span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 9V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h2"/><rect x="7" y="9" width="15" height="11" rx="2"/><circle cx="16" cy="14.5" r="1.6"/></svg></span><span class="nav-label">Movimientos</span></button>
-    <button class="nav-btn" onclick="cambiarTab('presupuesto',this)" aria-label="Presupuesto"><span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Presupuesto</span></button>
-    <button class="nav-btn" onclick="cambiarTab('metas',this)" aria-label="Metas"><span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L12 16.9 6.4 20l1.4-6.2-4.8-4.3 6.4-.6L12 3z"/></svg></span><span class="nav-label">Metas</span></button>
-    <button class="nav-btn" onclick="cambiarTab('logros',this)" aria-label="Logros"><span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg></span><span class="nav-label">Logros</span></button>
+    <button class="nav-btn" id="btnMas" onclick="toggleMenuMas(event, this)" aria-label="Más" aria-haspopup="true" aria-expanded="false"><span class="ni ni-dots"><svg viewBox="0 0 24 24" fill="none"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></span><span class="nav-label">Más</span></button>
   </nav>
+  <div class="mas-menu" id="masMenu">
+    <button class="mas-menu-item" onclick="irATabDesdeMenu('presupuesto')"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor" stroke="none"/></svg></span>Presupuesto</button>
+    <button class="mas-menu-item" onclick="irATabDesdeMenu('metas')"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L12 16.9 6.4 20l1.4-6.2-4.8-4.3 6.4-.6L12 3z"/></svg></span>Metas</button>
+    <button class="mas-menu-item" onclick="irATabDesdeMenu('logros')"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg></span>Logros</button>
+    <div class="mas-menu-sep"></div>
+    <button class="mas-menu-item whatsapp" onclick="compartirPorWhatsapp()"><span class="mi"><svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.472-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12.004 2.003c-5.514 0-9.997 4.483-9.997 9.997 0 1.762.462 3.484 1.34 5.003l-1.425 5.204 5.325-1.398a9.964 9.964 0 0 0 4.757 1.211h.004c5.514 0 9.997-4.483 9.997-9.997 0-2.671-1.04-5.182-2.929-7.071a9.933 9.933 0 0 0-7.072-2.949zm5.848 15.845c-.694.694-2.585 1.858-4.925 1.858h-.003a8.311 8.311 0 0 1-4.226-1.157l-.303-.18-3.14.825.838-3.06-.198-.314a8.297 8.297 0 0 1-1.27-4.415c0-4.596 3.741-8.336 8.34-8.336a8.283 8.283 0 0 1 5.897 2.446 8.282 8.282 0 0 1 2.436 5.897c0 4.597-3.74 8.337-8.336 8.337z"/></svg></span>Compartir por WhatsApp</button>
+  </div>
   <div class="overlay" id="modalPresupuesto"><div class="modal-sheet"><div class="modal-title">Agregar presupuesto</div><div class="modal-btns" style="margin-bottom:16px"><button class="btn-primary" onclick="guardarPresupuesto()">Guardar</button><button class="btn-secondary" onclick="cerrarModales()">Cancelar</button></div><div class="modal-field field"><label>Categoría</label><select id="budgetCat"></select></div><div class="modal-field field"><label>Límite mensual</label><input type="number" id="budgetMonto" placeholder="0" min="0" inputmode="decimal"></div></div></div>
   <div class="overlay" id="modalMeta"><div class="modal-sheet"><div class="modal-title">Nueva meta</div><div class="modal-btns" style="margin-bottom:16px"><button class="btn-primary" onclick="guardarMeta()">Guardar</button><button class="btn-secondary" onclick="cerrarModales()">Cancelar</button></div><div class="modal-field field"><label>Nombre</label><input type="text" id="metaNombre" placeholder="Ej: Vacaciones, Auto..."></div><div class="form-grid" style="margin-bottom:12px"><div class="field"><label>Objetivo ($)</label><input type="number" id="metaObjetivo" placeholder="0" min="0" inputmode="decimal"></div><div class="field"><label>Ya ahorrado ($)</label><input type="number" id="metaAhorrado" placeholder="0" min="0" inputmode="decimal"></div></div><div class="modal-field field"><label>Ícono</label><select id="metaIcono"><option value="🏖️">🏖️ Vacaciones</option><option value="🚗">🚗 Auto</option><option value="🏠">🏠 Casa</option><option value="📱">📱 Tecnología</option><option value="🎓">🎓 Educación</option><option value="💊">💊 Salud</option><option value="⭐">⭐ Otro</option></select></div></div></div>
   <div class="overlay" id="modalAhorro"><div class="modal-sheet"><div class="modal-title" id="modalAhorroTitulo">Agregar ahorro</div><div class="modal-btns" style="margin-bottom:16px"><button class="btn-primary" onclick="confirmarAhorro()">Agregar</button><button class="btn-secondary" onclick="cerrarModales()">Cancelar</button></div><div class="modal-field field"><label>Monto a agregar ($)</label><input type="number" id="ahorroMonto" placeholder="0" min="0" inputmode="decimal"></div></div></div>
