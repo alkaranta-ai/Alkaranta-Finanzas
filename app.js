@@ -187,6 +187,49 @@ function moverIndicadorNav(btn) {
   nav.style.setProperty("--nav-index", idx);
 }
 
+// ---------------------------------------------------------------
+// Menú "Más" del dock (Presupuesto / Metas / Logros / Compartir)
+// ---------------------------------------------------------------
+
+var URL_APP_FIJA = 'https://alkaranta-ai.github.io/Alkaranta-Finanzas-/';
+
+function toggleMenuMas(e, btn) {
+  if (e) e.stopPropagation();
+  var menu = document.getElementById('masMenu');
+  if (!menu) return;
+  var abrir = !menu.classList.contains('open');
+  menu.classList.toggle('open', abrir);
+  if (btn) btn.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+}
+
+function cerrarMenuMas() {
+  var menu = document.getElementById('masMenu');
+  var btn = document.getElementById('btnMas');
+  if (menu) menu.classList.remove('open');
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+}
+
+function irATabDesdeMenu(tab) {
+  cerrarMenuMas();
+  var btnMas = document.getElementById('btnMas');
+  cambiarTab(tab, btnMas);
+}
+
+function compartirPorWhatsapp() {
+  cerrarMenuMas();
+  var texto = 'Estoy usando Alkaranta Finanzas para controlar mis ingresos y gastos. ¡Probala! ' + URL_APP_FIJA;
+  var url = 'https://wa.me/?text=' + encodeURIComponent(texto);
+  window.open(url, '_blank');
+}
+
+document.addEventListener('click', function(e) {
+  var menu = document.getElementById('masMenu');
+  var btn = document.getElementById('btnMas');
+  if (!menu || !menu.classList.contains('open')) return;
+  if (menu.contains(e.target) || (btn && btn.contains(e.target))) return;
+  cerrarMenuMas();
+});
+
 function cambiarModo(modo) {
   modoActual = modo;
   document.getElementById('btnPersonal').classList.toggle('active', modo === 'personal');
