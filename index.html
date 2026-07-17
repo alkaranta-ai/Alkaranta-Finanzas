@@ -557,8 +557,23 @@
     @keyframes chatRowIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
     .avatar-glow-bot { transform-box: fill-box; transform-origin: center; animation: avatarPulse 2.4s ease-in-out infinite; }
     @keyframes avatarPulse { 0%, 100% { opacity: 0.35; transform: scale(1); } 50% { opacity: 0.65; transform: scale(1.12); } }
+
+    /* Parpadeo ambiente: ambos avatares, siempre que el chat no esté "dormido" */
+    .avatar-eye { transform-box: fill-box; transform-origin: center; animation: avatarBlink 4.6s ease-in-out infinite; }
+    .chat-row.user .avatar-eye { animation-duration: 5.3s; }
+    @keyframes avatarBlink { 0%, 90%, 100% { transform: scaleY(1); } 94% { transform: scaleY(0.12); } }
+
+    /* Boca "hablando": se activa solo mientras el bot está escribiendo
+       (misma clase is-typing que ya usa el efecto de máquina de escribir) */
+    .avatar-mouth { transform-box: fill-box; transform-origin: center; }
+    .chat-row:has(.chat-msg.is-typing) .avatar-mouth { animation: avatarTalk 0.3s ease-in-out infinite; }
+    @keyframes avatarTalk { 0%, 100% { transform: scaleY(0.55); } 50% { transform: scaleY(1.35); } }
+
+    /* Chat quieto: el último avatar del bot queda con ojos entrecerrados */
+    .chat-avatar.is-sleepy .avatar-eye { animation: none; transform: scaleY(0.3); }
+
     @media (prefers-reduced-motion: reduce) {
-      .chat-avatar, .chat-row, .avatar-glow-bot { animation: none; }
+      .chat-avatar, .chat-row, .avatar-glow-bot, .avatar-eye, .avatar-mouth { animation: none !important; }
     }
   </style>
 </head>
@@ -968,17 +983,17 @@
     if (tipo === 'user') {
       return '<svg class="chat-avatar avatar-face-user" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">' +
         '<rect x="2" y="2" width="36" height="36" rx="10" fill="#1a1a2e"/>' +
-        '<path d="M12 18 L18 18" stroke="#dcdce6" stroke-width="2.4" stroke-linecap="round"/>' +
-        '<path d="M22 18 L28 18" stroke="#dcdce6" stroke-width="2.4" stroke-linecap="round"/>' +
-        '<path d="M13 25 Q20 30 27 25" stroke="#dcdce6" stroke-width="2.4" stroke-linecap="round" fill="none"/>' +
+        '<rect class="avatar-eye" x="11" y="16.8" width="6" height="2.6" rx="1.3" fill="#dcdce6"/>' +
+        '<rect class="avatar-eye" x="23" y="16.8" width="6" height="2.6" rx="1.3" fill="#dcdce6"/>' +
+        '<path class="avatar-mouth" d="M13 25 Q20 30 27 25" stroke="#dcdce6" stroke-width="2.4" stroke-linecap="round" fill="none"/>' +
         '</svg>';
     }
     return '<svg class="chat-avatar avatar-face-bot" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">' +
       '<rect class="avatar-glow-bot" x="0" y="0" width="40" height="40" rx="11" fill="#059669" filter="url(#avatarGlowBlur)"/>' +
       '<rect x="2" y="2" width="36" height="36" rx="10" fill="#059669"/>' +
-      '<path d="M12 18 L18 18" stroke="#04342C" stroke-width="2.4" stroke-linecap="round"/>' +
-      '<path d="M22 18 L28 18" stroke="#04342C" stroke-width="2.4" stroke-linecap="round"/>' +
-      '<path d="M13 25 Q20 30 27 25" stroke="#04342C" stroke-width="2.4" stroke-linecap="round" fill="none"/>' +
+      '<rect class="avatar-eye" x="11" y="16.8" width="6" height="2.6" rx="1.3" fill="#04342C"/>' +
+      '<rect class="avatar-eye" x="23" y="16.8" width="6" height="2.6" rx="1.3" fill="#04342C"/>' +
+      '<path class="avatar-mouth" d="M13 25 Q20 30 27 25" stroke="#04342C" stroke-width="2.4" stroke-linecap="round" fill="none"/>' +
       '</svg>';
   }
 
@@ -989,6 +1004,7 @@
   function agregarBurbujaChat(texto, tipo) {
     var box = document.getElementById('chatBox');
     if (!box) return Promise.resolve();
+    if (typeof despertarChat === 'function') despertarChat();
     var row = document.createElement('div');
     row.className = 'chat-row ' + tipo;
     row.innerHTML = avatarSVG(tipo);
@@ -1015,12 +1031,13 @@
   function mostrarEscribiendo() {
     var box = document.getElementById('chatBox');
     if (!box) return;
+    if (typeof despertarChat === 'function') despertarChat();
     var row = document.createElement('div');
     row.className = 'chat-row bot';
     row.id = 'escribiendoIndicador';
     row.innerHTML = avatarSVG('bot');
     var div = document.createElement('div');
-    div.className = 'chat-msg bot';
+    div.className = 'chat-msg bot is-typing';
     div.style.opacity = '0.6';
     div.innerHTML = 'Escribiendo...';
     row.appendChild(div);
@@ -1077,17 +1094,38 @@
     enviarMensajeChat();
   }
 
+  // ================= Avatar "somnoliento" cuando el chat está quieto =================
+  var CHAT_IDLE_MS = 6000;
+  var chatIdleTimer = null;
+
+  function despertarChat() {
+    document.querySelectorAll('#chatBox .chat-avatar.is-sleepy').forEach(function (el) {
+      el.classList.remove('is-sleepy');
+    });
+    clearTimeout(chatIdleTimer);
+    chatIdleTimer = setTimeout(dormirChat, CHAT_IDLE_MS);
+  }
+
+  function dormirChat() {
+    var avatares = document.querySelectorAll('#chatBox .chat-row.bot .chat-avatar');
+    var ultimo = avatares[avatares.length - 1];
+    if (ultimo) ultimo.classList.add('is-sleepy');
+  }
+
   document.addEventListener('DOMContentLoaded', function() {
     var input = document.getElementById('chatInput');
     if (input) {
       input.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') enviarMensajeChat();
       });
+      input.addEventListener('input', despertarChat);
+      input.addEventListener('focus', despertarChat);
     }
     var box = document.getElementById('chatBox');
     if (box && box.children.length === 0) {
       agregarBurbujaChat('¡Hola! Preguntame por tu saldo, tus gastos, tu presupuesto o tus metas de ahorro. 💬', 'bot');
     }
+    despertarChat();
   });
 </script>
 </body>
