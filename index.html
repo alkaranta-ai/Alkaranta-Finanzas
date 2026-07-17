@@ -552,9 +552,14 @@
     .chat-suggest-btn.active { background: rgba(5,150,105,0.16); border-color: rgba(5,150,105,0.4); }
 
     /* --- Avatares del chat: carita simple, sin robot --- */
-    .avatar-face-bot { filter: drop-shadow(0 2px 4px rgba(20,20,25,0.18)); }
-    .avatar-face-user { filter: drop-shadow(0 2px 4px rgba(20,20,25,0.18)); }
-    .avatar-glow-bot { filter: blur(3px); opacity: 0.55; }
+    .chat-avatar { animation: chatRowIn 0.22s ease-out; }
+    .chat-row { animation: chatRowIn 0.22s ease-out; }
+    @keyframes chatRowIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .avatar-glow-bot { transform-box: fill-box; transform-origin: center; animation: avatarPulse 2.4s ease-in-out infinite; }
+    @keyframes avatarPulse { 0%, 100% { opacity: 0.35; transform: scale(1); } 50% { opacity: 0.65; transform: scale(1.12); } }
+    @media (prefers-reduced-motion: reduce) {
+      .chat-avatar, .chat-row, .avatar-glow-bot { animation: none; }
+    }
   </style>
 </head>
 <body>
@@ -705,6 +710,13 @@
       <div class="chat-toolbar">
         <button class="chat-suggest-btn" id="chatSuggestBtn" onclick="toggleChatSuggestions()" title="Consultas rápidas" aria-label="Consultas rápidas">💡</button>
       </div>
+      <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <defs>
+          <filter id="avatarGlowBlur" x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="3.2"/>
+          </filter>
+        </defs>
+      </svg>
       <div class="chat-box glass" id="chatBox"></div>
       <div class="chat-suggestions" id="chatSuggestions">
         <div class="chat-suggest-group">
@@ -949,29 +961,24 @@
     });
   }
 
-  // Genera la carita del avatar como SVG inline. 'bot' = emerald con aura,
-  // 'user' = tono oscuro sin aura, para distinguirse a simple vista.
+  // Genera el avatar como SVG inline: forma geométrica (cuadrado redondeado)
+  // con ojos y boca simples. 'bot' = emerald con resplandor pulsante,
+  // 'user' = tono oscuro neutro, sin resplandor, para distinguirse.
   function avatarSVG(tipo) {
     if (tipo === 'user') {
       return '<svg class="chat-avatar avatar-face-user" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">' +
-        '<defs><radialGradient id="gradUser" cx="35%" cy="30%" r="75%">' +
-        '<stop offset="0%" stop-color="#3a3a5c"/><stop offset="100%" stop-color="#1a1a2e"/>' +
-        '</radialGradient></defs>' +
-        '<circle cx="20" cy="20" r="18" fill="url(#gradUser)"/>' +
-        '<circle cx="14" cy="19" r="2" fill="#fff" opacity="0.92"/>' +
-        '<circle cx="26" cy="19" r="2" fill="#fff" opacity="0.92"/>' +
-        '<path d="M14 25 Q20 29 26 25" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.92"/>' +
+        '<rect x="2" y="2" width="36" height="36" rx="10" fill="#1a1a2e"/>' +
+        '<path d="M12 18 L18 18" stroke="#dcdce6" stroke-width="2.4" stroke-linecap="round"/>' +
+        '<path d="M22 18 L28 18" stroke="#dcdce6" stroke-width="2.4" stroke-linecap="round"/>' +
+        '<path d="M13 25 Q20 30 27 25" stroke="#dcdce6" stroke-width="2.4" stroke-linecap="round" fill="none"/>' +
         '</svg>';
     }
     return '<svg class="chat-avatar avatar-face-bot" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">' +
-      '<defs><radialGradient id="gradBot" cx="35%" cy="30%" r="75%">' +
-      '<stop offset="0%" stop-color="#6ee7c9"/><stop offset="100%" stop-color="#059669"/>' +
-      '</radialGradient></defs>' +
-      '<circle class="avatar-glow-bot" cx="20" cy="20" r="19" fill="#6ee7c9"/>' +
-      '<circle cx="20" cy="20" r="18" fill="url(#gradBot)"/>' +
-      '<circle cx="14" cy="19" r="2" fill="#fff" opacity="0.95"/>' +
-      '<circle cx="26" cy="19" r="2" fill="#fff" opacity="0.95"/>' +
-      '<path d="M14 24 Q20 29 26 24" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.95"/>' +
+      '<rect class="avatar-glow-bot" x="0" y="0" width="40" height="40" rx="11" fill="#059669" filter="url(#avatarGlowBlur)"/>' +
+      '<rect x="2" y="2" width="36" height="36" rx="10" fill="#059669"/>' +
+      '<path d="M12 18 L18 18" stroke="#04342C" stroke-width="2.4" stroke-linecap="round"/>' +
+      '<path d="M22 18 L28 18" stroke="#04342C" stroke-width="2.4" stroke-linecap="round"/>' +
+      '<path d="M13 25 Q20 30 27 25" stroke="#04342C" stroke-width="2.4" stroke-linecap="round" fill="none"/>' +
       '</svg>';
   }
 
